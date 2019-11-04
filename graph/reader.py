@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-'''
-A Função principal dessa classe é fazer o parse da instância do problema
-e criar uma representação em memória.
-'''
-
 import re
 from collections import defaultdict
 
 class SteinerTreeProblem(object):
+    '''
+        The main purpose for this class is represent in memory the Steiner Problem's instance in memory.
+    '''
 
     def __init__(self):
         self.nro_nodes = 0
@@ -24,6 +22,9 @@ class SteinerTreeProblem(object):
 
 
 class Reader(object):
+    '''
+        This class parses the Steiner Tree Problem instance's file and fill the Steiner Tree Problem class above.
+    '''
 
     def __init__(self):
         self.STP = SteinerTreeProblem()
@@ -34,17 +35,17 @@ class Reader(object):
         with open(fileName, 'r') as file :
             for line in file :
                 if "SECTION Comment" in line :
-                    self.parser_section_comment(file)
+                    self._parser_section_comment(file)
 
                 elif "SECTION Graph" in line :
-                    self.parser_section_graph(file)
+                    self._parser_section_graph(file)
 
                 elif "SECTION Terminals" in line :
-                    self.parser_section_terminals(file)
+                    self._parser_section_terminals(file)
 
         return self.STP
 
-    def parser_section_comment(self,file):
+    def _parser_section_comment(self,file):
         for line in file:
             _list = re.findall(r'"(.*?)"',line)
             if "Name" in line :
@@ -62,13 +63,13 @@ class Reader(object):
             elif "END" in line:
                 break
 
-    def parser_section_graph(self, file):
+    def _parser_section_graph(self, file):
         for line in file:
             if line.startswith("E ") :
                 entries = re.findall(r'(\d+)', line)
                 vetor = [ e for e in entries if e.isdecimal() ]
 
-                assert len(vetor) == 3, "Lendo uma linha com mais de três valores"
+                assert len(vetor) == 3, "The line must to have three values"
                 v, w, peso = vetor
 
                 v = int(v)
@@ -89,12 +90,12 @@ class Reader(object):
             elif "END" in line :
                 break
 
-    def parser_section_terminals(self,file):
+    def _parser_section_terminals(self,file):
 
         for line in file:
             if line.startswith("T "):
                 _string = re.findall(r"(\d+)$", line)
-                v_terminal = _string[0] if len(_string) == 1 else -1
+                v_terminal = int(_string[0]) if len(_string) == 1 else -1
                 self.STP.terminals.append(v_terminal)
 
             elif line.startswith("Terminals"):
