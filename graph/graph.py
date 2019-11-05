@@ -3,6 +3,9 @@ from collections import defaultdict
 
 class Graph(object):
 
+    def size(self):
+        raise NotImplementedError("")
+
     def add_edge(self,v,w):
         raise NotImplementedError("")
 
@@ -25,7 +28,6 @@ class GraphSet(Graph):
     '''
         Classe para representar um grafo.
 
-
         Baseado nos trabalhos de:
 
         Robert Sedgewick; Kevin Wayne; Robert Dondero
@@ -35,8 +37,17 @@ class GraphSet(Graph):
     '''
     def __init__(self, vertices=None, edges=None):
 
-        self.edges = edges if edges else defaultdict(set)
-        self.vertices = vertices if vertices else list()
+        self.__edges = edges if edges else defaultdict(set)
+        self.__vertices = vertices if vertices else list()
+
+    def size(self):
+        '''
+            Gostaria de informar o número de vértices e de arestas
+        '''
+        N = len(self.__vertices)
+        E = len(self.__edges)
+
+        return tuple(N, E)
 
     def add_edge(self,v,w):
         if not self.has_vertex(v):
@@ -45,27 +56,27 @@ class GraphSet(Graph):
             self.add_vertice(w)
 
         if not self.has_edge(v,w):
-            self.edges[v].add(w)
-            self.edges[w].add(v)
+            self.__edges[v].add(w)
+            self.__edges[w].add(v)
 
     def add_vertice(self,v):
         if not self.has_vertex(v):
-            self.vertices.append(v)
+            self.__vertices.append(v)
 
     def adjacent_to(self,v):
-        adjacents = self.edges[v]
-        return iter(adjacents)
+        adjacents = self.__edges[v]
+        yield(adjacents)
 
     def has_vertex(self, v):
-        return v in self.vertices
+        return v in self.__vertices
 
     def has_edge(self, v, w):
         if self.has_vertex(v) :
-            return (w in self.edges[v])
+            return (w in self.__edges[v])
         return False
 
     def degree(self, v):
-        adj = self.edges[v]
+        adj = self.__edges[v]
         return len(adj)
 
 
@@ -73,9 +84,28 @@ class GraphDictionary(Graph):
 
     def __init__(self, vertices=None, terminals=None, edges=None):
 
-        self.edges = edges if edges else defaultdict(dict)
-        self.vertices = vertices if vertices else list()
-        self.terminals = terminals if terminals else list()
+        if isinstance(vertices,int) : 
+            self.__vertices = range(1,vertices+1) ## :(
+        elif isinstance(vertices,list) :
+            self.__vertices = vertices
+
+        self.__edges = edges if edges else defaultdict(dict)
+        self.__terminals = terminals if terminals else list()
+
+    @property
+    def edges(self):
+        for e in self.__edges:
+            yield e
+    
+    @property
+    def vertices(self):
+        for v in self.__vertices:
+            yield v
+
+    def size(self):
+        N = len(self.__vertices)
+
+        return N
 
     def add_edge(self,v,w, weight):
         if not self.has_vertex(v):
@@ -84,34 +114,34 @@ class GraphDictionary(Graph):
             self.add_vertice(w)
 
         if not self.has_edge(v,w):
-            self.edges[v][w] = weight
-            self.edges[w][v] = weight
+            self.__edges[v][w] = weight
+            self.__edges[w][v] = weight
 
     def add_vertice(self,v, is_terminal=False):
         if not self.has_vertex(v):
-            if is_terminal and (not v in self.terminals):
-                self.terminals.append(v)
-            self.vertices.append(v)
+            if is_terminal and (not v in self.__terminals):
+                self.__terminals.append(v)
+            self.__vertices.append(v)
 
     def adjacent_to(self,v):
-        adjacents = self.edges[v]
+        adjacents = self.__edges[v]
         return iter(adjacents.keys())
 
     def has_vertex(self, v):
-        return v in self.vertices
+        return (v in self.__vertices)
 
     def has_edge(self, v, w):
         if self.has_vertex(v) :
-            return (w in self.edges[v])
+            return (w in self.__edges[v])
         return False
 
     def degree(self, v):
-        adj = self.edges[v]
+        adj = self.__edges[v]
         return len(adj.keys())
 
     def weight(self, v, w):
         if self.has_edge(v,w): 
-            return self.edges[v][w]
+            return self.__edges[v][w]
         else:
             return 0
 
@@ -119,5 +149,5 @@ class GraphDictionary(Graph):
 class GraphSparseMatrix(Graph):
     pass
 
-class GraphCondensed(Graph):
+class GraphCondensedMatrix(Graph):
     pass

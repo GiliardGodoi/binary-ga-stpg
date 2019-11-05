@@ -1,5 +1,7 @@
-
 from graph import Reader
+from graph import GraphDictionary
+# from graph.util.path_finder import find_path
+from graph.util.path_finder import find_shortest_path
 
 from os import path
 
@@ -15,3 +17,7 @@ stp = reader.parser(arquivo)
 import pprint as pp 
 
 pp.pprint(stp.graph)
+
+graph = GraphDictionary(vertices=stp.nro_nodes, terminals=stp.terminals, edges=stp.graph)
+
+path = find_shortest_path(graph,1, 37)

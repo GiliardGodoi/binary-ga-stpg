@@ -6,3 +6,4 @@
 '''
 from graph.reader import Reader
 from graph.reader import SteinerTreeProblem
+from graph.graph import GraphDictionary
