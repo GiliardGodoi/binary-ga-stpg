@@ -87,16 +87,19 @@ class GraphDictionary(Graph):
         if isinstance(vertices,int) : 
             self.__vertices = range(1,vertices+1) ## :(
         elif isinstance(vertices,list) :
-            self.__vertices = vertices
+            self.__vertices = sorted(vertices)
 
         self.__edges = edges if edges else defaultdict(dict)
         self.__terminals = terminals if terminals else list()
+
+    def __getitem__(self, key):
+        return self.__edges[key]
 
     @property
     def edges(self):
         for e in self.__edges:
             yield e
-    
+
     @property
     def vertices(self):
         for v in self.__vertices:
