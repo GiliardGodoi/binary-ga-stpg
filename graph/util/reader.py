@@ -24,6 +24,9 @@ class SteinerTreeProblem(object):
 class Reader(object):
     '''
         This class parses the Steiner Tree Problem instance's file and fill the Steiner Tree Problem class above.
+
+        Based on Bruna Osti's propose
+        from: <https://github.com/brunaostii/Steiner_Tree>
     '''
 
     def __init__(self):
