@@ -23,24 +23,6 @@ class PriorityQueue():
         Insere um elemento na fila de prioridade.
         @paramns: priority <int> e label <vértice> do grafo
         '''
-        #<https://github.com/brunaostii/Steiner_Tree>
-        # if label in self.__index:
-        #     self.__queue = [(w,l) for w,l in self.__queue if l!=label]
-        #     heapify(self.__queue) # heapify 
-        # heappush(self.__queue, (priority, label))
-        # self.__index[label] = priority
-        
-        ## Another one implementation # Its seems to run more efficiently, but not too much
-        # if label in self.__index :
-        #     for w, l in self.__queue :
-        #         if l == label :
-        #             break
-        #     pos = self.__queue.index((w,label))
-        #     self.__queue[pos] = (priority,label)
-        #     self.__queue.sort()
-        # else :
-        #     heappush(self.__queue, (priority, label))
-        #     self.__index[label] = priority
 
         if label in self.__entry_finder :
             self.__mark_remove(label)
