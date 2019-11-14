@@ -34,13 +34,13 @@ class GraphDictionary(object):
     @property
     def vertices(self):
         ''' Retorna um iterator para iterar sobre o cojunto de vértices '''
-        return iter(self.__nodes)
+        return self.__nodes
 
     def size(self):
         ''' Retorna o número de vértices no grafo '''
         return len(self.__nodes)
 
-    def add_edge(self,v,w, weight = 1):
+    def add_edge(self,v,u, weight = 1):
         '''Insere um arestas no grafo.
 
         @params <vértice v, vértice w, peso entre (v,w)>
@@ -49,16 +49,16 @@ class GraphDictionary(object):
         Não permite a inserção de loços, isto é, quando v == w.
         Se o parâmetro peso não é definido, é tomado como sendo de valor 1 (um)
         '''
-        if v == w :
+        if v == u :
             return
         if not self.has_node(v):
             self.add_node(v)
-        if not self.has_node(w):
-            self.add_node(w)
+        if not self.has_node(u):
+            self.add_node(u)
 
-        if not self.has_edge(v,w):
-            self.__edges[v][w] = weight
-            self.__edges[w][v] = weight
+        if not self.has_edge(v,u):
+            self.__edges[v][u] = weight
+            self.__edges[u][v] = weight
 
     def add_node(self,v):
         ''' @param <vértice>
@@ -72,8 +72,7 @@ class GraphDictionary(object):
         Retorna um objeto <iterator> com os vértices adjacentes ao vértice passado como parâmetro.
         Se não existe arestas com o vértice informado, um <KeyError> é lançado. Não faz essa verificação.
         '''
-        adjacents = self.__edges[v]
-        return iter(adjacents.keys())
+        return self.__edges[v].keys()
 
     def has_node(self, v):
         ''' Verifica se um vértice existe no grafo'''
@@ -94,5 +93,7 @@ class GraphDictionary(object):
         ''' Retorna o peso de uma aresta. Se a aresta não existe é retornado o valor 0 '''
         if self.has_edge(v,w): 
             return self.__edges[v][w]
-        else:
+        elif v == w :
             return 0
+        else:
+            return float("inf")
