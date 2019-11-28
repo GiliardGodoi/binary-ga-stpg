@@ -1,18 +1,68 @@
 # -*- coding: utf-8 -*-
 import random
+from collections import defaultdict
 
+from graph.graph import GraphDictionary as Graph
+from graph.util.datastructure import PriorityQueue
 from graph.util.mpath import shortest_path_dijkstra as minPath
 from graph.util.mst import prim
-from graph.graph import GraphDictionary as Graph
 
-def minimum_paths_heuristic(graph, start, terminals):
-    ''' Minimum path
 
-    Calcula a Árvore de Caminhos Mínimos de um nó origem S <start> até os demais nós.
-    Realiza uma poda considerando os nós termianis como folhas até a raiz S start.
+def shortest_path(graph, start, terminals):
 
-    Vale lembrar que a árvore de caminhos mínimos representa os caminhos mínimos de um vértice S
-    até todos os outros vértices. 
+    dist, prev = minPath(graph,start)
+
+    distancias = defaultdict(dict)
+    distancias[start] = dist
+
+    previos = defaultdict(dict)
+    previos[start] = prev
+
+    pqueue = PriorityQueue()
+
+    for t in terminals:
+        pqueue.push(distancias[start][t], (start,t))
+
+    subtree = Graph()
+
+    while pqueue:
+        source, target = pqueue.pop()
+        t = target
+
+        if target not in distancias:
+                dist, prev = minPath(graph,target)
+                distancias[target] = dist
+                previos[target] = prev
+                for tmp in terminals:
+                    pqueue.push(distancias[target][tmp], (target,tmp))
+
+        if target not in subtree.vertices :
+            while distancias[source][t]:
+                u = previos[source][t]
+                w = graph[u][t]
+                subtree.add_edge(t,u,weight=w)
+                t = u
+
+                if u not in distancias:
+                    dist, prev = minPath(graph,u)
+                    distancias[u] = dist
+                    previos[u] = prev
+                    for tmp in terminals:
+                        pqueue.push(distancias[u][tmp], (u,tmp))
+
+    gg, custo = prunning_mst(subtree, start, terminals)
+
+    return gg, custo
+
+
+def shortest_path_with_origin(graph, start, terminals):
+    ''' Adaptação para o algortimo Shortest Path with Origin Heuristic
+
+    A Árvore solução Tspoh é contruida iterativamente: um vertice terminal é incluido por vez.
+
+    Determina-se a árvore de caminhos mínimos de um ponto inicial <start> até os demais vértices;
+    A partir de cada vértice terminal incluí-se o menor caminho até <start>
+    Um vértice terminal ou está nas folhas da árvore formada, ou está no caminho de outro nó terminal.
     '''
 
     dist, prev = minPath(graph,start)
@@ -30,22 +80,11 @@ def minimum_paths_heuristic(graph, start, terminals):
 
     return stree, custo
 
-def shortest_path_heuristic(graph, start, terminals):
-    ''' Adaptação para o algortimo Shortest Path Heuristic
-
-    A Árvore solução Tsph é contruida iterativamente: um vertice terminal é incluido por vez.
-
-    No algoritmo original, no passo para incluir um novo vértice é considerado
-    o menor caminho entre o vértice terminal que se deseja incluir e a árvore que se está construindo.
-    Em termos práticos é considerado a menor distância que liga qualquer um dos vértices que pertence à árvore Tsph
-    e o novo vértice que se deseja incluir.
-    Esse procedimento requer que seja calculada a matriz de caminhos mínimos de todos para todos os vértices.
-    Isso pode ser feito pelos Algortimos de Floyd-Warshall ou pelo Johnson (Ver o livro de CRLS)
-
-    O que se faz aqui é calcular Árvore de caminhos mínimos de um ponto inicial até os demais vértices,
-    realizar a poda (como na função anterior) para determinar um subconjunto de vértices.
-    São consideradas então somente as arestas dos vértices desse subconjunto de vértices.
-    Então é calculada a MST desse subgrafo.
+def shortest_path_origin_prim(graph, start, terminals):
+    '''
+        Determinar a árvore de caminhos mínimos <T> dos vértices terminais até o nó <start>
+        Define um subgrafo formado pelos vértices de T com as correspondentes arestas do grafo G <graph>.
+        Calcula a MST do subgrafo considerado.
     '''
 
     dist, prev = minPath(graph,start)
@@ -72,11 +111,13 @@ def shortest_path_heuristic(graph, start, terminals):
 
     return subtree, custo
 
-def mst_prunning_heuristic(graph, terminals, start):
+def prunning_mst(graph, start, terminals):
     '''
         Determina a MST do grafo por meio do algoritmo de Prim.
         Realiza a poda considerando os nós terminais como os nós folhas até a raiz <start>
-        Se <start> é um nó terminal o peso da árvore será sempre igual.
+        Considera-se um algoritmo determinístico dado os mesmos parâmetros.
+
+        Resulta sempre na mesma árvore para qualquer vértice <start> considerado.
     '''
     mst, _ = prim(graph,start)
 
