@@ -107,9 +107,18 @@ def shortest_path_origin_prim(graph, start, terminals):
                 w = graph.edges[v][u]
                 subgraph.add_edge(v,u,weight=w)
 
-    subtree, custo = prim(subgraph,start)
+    subtree = Graph()
 
-    return subtree, custo
+    previous, cost = prim(subgraph,start)
+
+    while previous :
+        v, u = previous.popitem()
+        if v != u :
+            w = graph[v][u]
+            subtree.add_edge(u,v,weight=w)
+
+    return subtree, cost
+
 
 def prunning_mst(graph, start, terminals):
     '''
