@@ -36,6 +36,9 @@ class GraphDictionary(object):
         ''' Retorna um iterator para iterar sobre o cojunto de vértices '''
         return self.__nodes
 
+    def get(self,key,std = None):
+        return self.__edges.get(key,std)
+
     def size(self):
         ''' Retorna o número de vértices no grafo '''
         return len(self.__nodes)
