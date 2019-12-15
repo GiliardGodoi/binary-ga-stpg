@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .datastructure import PriorityQueue
+from .priorityqueue import PriorityQueue
 
 
 def prim(graph, start):
@@ -29,3 +29,6 @@ def prim(graph, start):
                 queue.push(weight,(node_end, next_node))
 
     return mtree, total_weight
+
+def kruskal(graph, start):
+    raise NotImplementedError("Ainda não implementado")

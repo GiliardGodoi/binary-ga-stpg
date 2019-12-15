@@ -14,10 +14,12 @@ class GraphDictionary(object):
     '''
     def __init__(self, vertices=None, edges=None):
 
-        if isinstance(vertices,int) : 
-            self.__nodes = list(range(1,vertices+1)) ## :(
-        elif isinstance(vertices,(list,set,tuple)) :
-            self.__nodes = sorted(vertices)
+        if isinstance(vertices,int) :
+            self.__nodes = list(range(1,vertices+1))
+        elif isinstance(vertices,(set,tuple)) :
+            self.__nodes = list(vertices)
+        elif isinstance(vertices,list) :
+            self.__nodes = vertices
         else:
             self.__nodes = list()
 
@@ -96,7 +98,7 @@ class GraphDictionary(object):
         ''' Retorna o peso de uma aresta. Se a aresta não existe é retornado o valor 0 '''
         if self.has_edge(v,w): 
             return self.__edges[v][w]
-        elif v == w :
+        elif (v == w) and (v in self.__nodes) :
             return 0
         else:
             return float("inf")

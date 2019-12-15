@@ -11,7 +11,7 @@ def bfs(graph, start=None):
     Se <start> não está definido no conjunto de arestas do grafo, então é lançado um
     KeyError.
     '''
-    all_nodes = graph.edges.keys()
+    all_nodes = graph.vertices
 
     if start and (start in all_nodes):
         start = start

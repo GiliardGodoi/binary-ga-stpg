@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import deque
-from .datastructure import PriorityQueue
+from .priorityqueue import PriorityQueue
 
 def shortest_path_dijkstra(graph, source):
     ''' Dijkstra Algorithm - 
