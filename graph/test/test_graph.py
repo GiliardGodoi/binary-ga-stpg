@@ -89,6 +89,10 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
         self.assertEqual(graph.degree(5),1)
         self.assertEqual(graph.degree(6),1)
 
+        graph.add_edge(150, 134) # insert without set 'weight' explicitly
+        self.assertEqual(graph[150][134],1)
+        self.assertEqual(graph.weight(134,150),1)
+
 
     def test_ErrorHandle(self):
 
@@ -178,6 +182,24 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
         self.assertEqual(len(graph.edges),0)
         self.assertFalse(graph.has_node(5))
         self.assertFalse(graph.has_edge(5,5))
+
+    def test_GenerateUndirectEdges(self):
+        diretorio_dados = "datasets"
+        arquivo_dados = "b01.stp"
+        arquivo = path.join(diretorio_dados, arquivo_dados)
+
+        reader = Reader()
+
+        stp = reader.parser(arquivo)
+
+        graph = GraphDictionary(vertices=stp.nro_nodes,edges=stp.graph)
+
+        edges = set()
+
+        for e in graph.gen_undirect_edges():
+            edges.add(e)
+
+        self.assertEqual(len(edges),stp.nro_edges)
 
     def test_read_b01(self):
         diretorio_dados = "datasets"

@@ -102,3 +102,16 @@ class GraphDictionary(object):
             return 0
         else:
             return float("inf")
+
+    def gen_direct_edges(self):
+        for v in self.__edges.keys():
+            for u in self.__edges[v].keys():
+                yield (v,u)
+
+    def gen_undirect_edges(self):
+        visited = set()
+        for v in self.__edges.keys():
+            for u in self.__edges[v].keys():
+                if not u in visited :
+                    yield (v,u)
+            visited.add(v)
