@@ -3,9 +3,9 @@ import random
 from collections import defaultdict
 
 from graph.graph import GraphDictionary as Graph
-from graph.util.datastructure import PriorityQueue
-from graph.util.mpath import shortest_path_dijkstra as minPath
-from graph.util.mst import prim
+from graph.priorityqueue import PriorityQueue
+from graph.mpath import shortest_path_dijkstra as minPath
+from graph.mst import prim
 
 
 def shortest_path(graph, start, terminals):

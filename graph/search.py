@@ -11,12 +11,10 @@ def bfs(graph, start=None):
     Se <start> não está definido no conjunto de arestas do grafo, então é lançado um
     KeyError.
     '''
-    all_nodes = graph.vertices
-
-    if start and (start in all_nodes):
-        start = start
-    elif not (start in all_nodes):
-        raise KeyError("start node is not in graph")
+    if not start:
+        raise AttributeError("Start is not defined")
+    elif not (start in graph.vertices):
+        raise KeyError("start node is not in graph")     
 
     
     visited_nodes = set()
