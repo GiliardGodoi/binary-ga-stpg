@@ -14,19 +14,29 @@ class GraphDictionary(object):
     '''
     def __init__(self, vertices=None, edges=None):
 
-        if isinstance(vertices,int) :
-            self.__nodes = list(range(1,vertices+1))
-        elif isinstance(vertices,(set,tuple)) :
-            self.__nodes = list(vertices)
-        elif isinstance(vertices,list) :
-            self.__nodes = vertices
-        else:
-            self.__nodes = list()
+        if isinstance(edges,defaultdict):
+            self.__edges = edges
+        elif edges is None:
+            self.__edges = defaultdict(dict)
+        else :
+            raise AttributeError("Edges isnt a dict")
 
-        self.__edges = edges if edges else defaultdict(dict)
+        if isinstance(vertices,int):
+            nodes = range(1,vertices+1)
+        elif isinstance(vertices,(list,set,tuple)):
+            nodes = vertices
+        else:
+            nodes = list()
+
+        for v in nodes: # ainda está estranha essa forma de inicialização do grafo
+            if not v in self.__edges:
+                self.__edges[v] = dict()
 
     def __getitem__(self,key):
         return self.__edges[key]
+
+    def __contains__(self, item):
+        return item in self.__edges
 
     @property
     def edges(self):
@@ -36,14 +46,14 @@ class GraphDictionary(object):
     @property
     def vertices(self):
         ''' Retorna um iterator para iterar sobre o cojunto de vértices '''
-        return self.__nodes
+        return iter(self.__edges.keys())
 
     def get(self,key,std = None):
         return self.__edges.get(key,std)
 
     def size(self):
         ''' Retorna o número de vértices no grafo '''
-        return len(self.__nodes)
+        return len(self.__edges)
 
     def add_edge(self,v,u, weight = 1):
         '''Insere um arestas no grafo.
@@ -56,21 +66,27 @@ class GraphDictionary(object):
         '''
         if v == u :
             return
-        if not self.has_node(v):
-            self.add_node(v)
-        if not self.has_node(u):
-            self.add_node(u)
-
-        if not self.has_edge(v,u):
-            self.__edges[v][u] = weight
-            self.__edges[u][v] = weight
+        
+        self.__edges[v][u] = weight
+        self.__edges[u][v] = weight
 
     def add_node(self,v):
         ''' @param <vértice>
         Insere um novo vértice ao conjunto de vértices. Não permite a inserção de um vértice pré-existente
         '''
         if not self.has_node(v):
-            self.__nodes.append(v)
+            self.__edges[v] = dict()
+
+    def remove_edge(self, v, u):
+        if self.has_edge(v,u):
+            self.__edges[v].pop(u)
+            self.__edges[u].pop(v)
+
+    def remove_node(self,w):
+        if self.has_node(w):
+            adjacents = self.__edges.pop(w)
+            for v in adjacents.keys():
+                self.__edges[v].pop(w)
 
     def adjacent_to(self,v):
         ''' @param <vértice>
@@ -81,7 +97,7 @@ class GraphDictionary(object):
 
     def has_node(self, v):
         ''' Verifica se um vértice existe no grafo'''
-        return (v in self.__nodes)
+        return (v in self.__edges)
 
     def has_edge(self, v, w):
         ''' Verifica se uma aresta existe no grafo '''
@@ -98,10 +114,16 @@ class GraphDictionary(object):
         ''' Retorna o peso de uma aresta. Se a aresta não existe é retornado o valor 0 '''
         if self.has_edge(v,w): 
             return self.__edges[v][w]
-        elif (v == w) and (v in self.__nodes) :
+        elif (v == w) and self.has_node(v):
             return 0
         else:
             return float("inf")
+
+    def W(self,v,w):
+        '''
+        A short call to weight method
+        '''
+        return self.weight(v,w)
 
     def gen_direct_edges(self):
         for v in self.__edges.keys():
