@@ -73,9 +73,12 @@ def shortest_path_with_origin(graph, start, terminals):
     for u in terminals:
         while dist[u] :
             v = prev[u]
-            w = graph[u][v]
-            custo += w
-            stree.add_edge(u,v,weight=w)
+            if not stree.has_edge(u,v):
+                w = graph[u][v]
+                stree.add_edge(u,v,weight=w)
+                custo += w
+            else:
+                break
             u = v
 
     return stree, custo
