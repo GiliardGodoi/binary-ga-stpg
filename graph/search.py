@@ -29,6 +29,26 @@ def bfs(graph, start=None):
 
     return visited_nodes
 
+def dfs(graph, start = None):
+    ''' Deep First Search'''
+
+    if not start :
+        raise AttributeError('Start is not defined')
+    elif not (start in graph):
+        raise KeyError("Start node is not in graph")
+
+    vertices_done = set()
+    stack = deque([start])
+
+    while stack:
+        node = stack.pop()
+        vertices_done.add(node)
+        for v in graph.adjacent_to(node):
+            if not v in vertices_done:
+                stack.append(v)
+
+    return vertices_done
+
 def find_connected_components(graph):
     '''
         Determina as componentes conexas de um grafo dado.
