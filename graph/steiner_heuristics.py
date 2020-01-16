@@ -86,7 +86,7 @@ def shortest_path_with_origin(graph, start, terminals):
 def shortest_path_origin_prim(graph, start, terminals):
     '''
         Determinar a árvore de caminhos mínimos <T> dos vértices terminais até o nó <start>
-        Define um subgrafo formado pelos vértices de T com as correspondentes arestas do grafo G <graph>.
+        Define um subgrafo formado pelos vértices presentes em T com as correspondentes arestas do grafo G <graph>.
         Calcula a MST do subgrafo considerado.
     '''
 
@@ -110,9 +110,9 @@ def shortest_path_origin_prim(graph, start, terminals):
                 w = graph.edges[v][u]
                 subgraph.add_edge(v,u,weight=w)
 
-    subtree = Graph()
-
     previous, cost = prim(subgraph,start)
+
+    subtree = Graph()
 
     while previous :
         v, u = previous.popitem()

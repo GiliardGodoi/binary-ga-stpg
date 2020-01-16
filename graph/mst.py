@@ -6,7 +6,7 @@ def prim(graph, start):
     '''
         Prim's algorithm for the MST problem.
 
-        TODO: 
+        TO DO: 
             - Verificar se para diferentes pontos de inicialização retorna a mesma árvore
             se sim, parece que está funcionando ok.
     '''
