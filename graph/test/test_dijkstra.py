@@ -3,7 +3,7 @@ from os import path
 
 from graph import GraphDictionary as Graph
 from graph.reader import Reader
-from graph.mpath import shortest_path_dijkstra as dijkstra
+from graph.algorithms import shortest_path_dijkstra as dijkstra
 
 class TestDijkstraImplementation(unittest.TestCase):
 

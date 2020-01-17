@@ -1,9 +1,9 @@
-#import pprint as pp
+import pprint as pp
 from os import path
 #from collections import deque
 #from graph.priorityqueue import PriorityQueue
 
-from graph.graph import GraphDictionary
+from graph import GraphDictionary
 from graph.steiner_heuristics import shortest_path_origin_prim as heuristic
 #from graph.steiner_heuristics import prunning_mst
 
@@ -51,9 +51,9 @@ if __name__ == "__main__":
 
     graph = GraphDictionary(vertices=stp.nro_nodes, edges=stp.graph)
 
-    sub1, c1 = heuristic(graph, stp.terminals[0], stp.terminals) # 0 ate 16
-    sub2, c2 = heuristic(graph, stp.terminals[16], stp.terminals)
-    
+    sub1, c1 = heuristic(graph, stp.terminals[4], stp.terminals) # 0 ate 16
+    sub2, c2 = heuristic(graph, stp.terminals[5], stp.terminals)
+
     _root = 36
 
     A = gg_rooted_tree(sub1,_root)
@@ -105,4 +105,4 @@ if __name__ == "__main__":
 
     CC = turn_tree_dict_as_graph(child,graph)
 
-    cs = gg_total_weight(CC)
+    c3 = gg_total_weight(CC)

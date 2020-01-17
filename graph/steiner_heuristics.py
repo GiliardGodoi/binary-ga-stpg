@@ -4,8 +4,8 @@ from collections import defaultdict
 
 from graph.graph import GraphDictionary as Graph
 from graph.priorityqueue import PriorityQueue
-from graph.mpath import shortest_path_dijkstra as minPath
-from graph.mst import prim
+from graph.algorithms import shortest_path_dijkstra as minPath
+from graph.algorithms import prim
 
 
 def shortest_path(graph, start, terminals):
