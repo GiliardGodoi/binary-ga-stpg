@@ -2,19 +2,41 @@
 from collections import deque
 from .priorityqueue import PriorityQueue
 
+'''
+    This module contains the most commons algorithms for work with graphs.
+    The graph representation use the class GraphDictionary class define in the 'graph' module
+'''
+
+__all__ = [
+        "shortest_path_dijkstra",
+        "prim",
+        "bfs",
+        "dfs",
+        "find_connected_components"
+        ]
+
 def shortest_path_dijkstra(graph, source):
-    ''' Dijkstra Algorithm - 
+    ''' Dijkstra Algorithm: It computes the lowest distance between a source vertice and
+    all the other vertices.
 
-    Return: <vertice - distance from source> - distance dictionary from the source to vertice
-            < vertice - previou > - a dictionary representing a previous node
+    Parameters
+        graph : GraphDictionary
+        source : <a vertice from the graph>
 
-    An early implementation has O(n^2) complexity. 
-    Many improvements have been proposed across the years. 
-    They are more complicated, though.
+    Returns
+        dist : dict
+            <vertice : distance from source> - distance dictionary from the source to vertice
+        prev : dict
+            < vertice : previous > - a dictionary representing a previous node
 
-    Based in Chirantan Sharma's code
-    <https://github.com/cs-oak/Fibonacci-Heaps/blob/master/dijkstra.py>
-    Its use an other Priority Queue implemantation which it is not used by Sharma.
+    Notes:
+        An early implementation has O(n^2) complexity.
+        Many improvements has been proposed across the years.
+        They are more complicated, though.
+
+        Based in Chirantan Sharma's code
+        <https://github.com/cs-oak/Fibonacci-Heaps/blob/master/dijkstra.py>
+        Its use an other Priority Queue implemantation which is not used by Sharma.
     '''
     dist = {source : 0}
     prev = {}
@@ -43,17 +65,25 @@ def shortest_path_dijkstra(graph, source):
 
 
 def prim(graph, start):
-    '''
-        Prim's algorithm to define the Minimum Spanning Tree.
+    ''' Prim's Algorithm: Compute the Minimum Spanning Tree for the graph.
 
-        TO DO: 
-            - Verificar se para diferentes pontos de inicialização retorna a mesma árvore
-            se sim, parece que está funcionando ok.
+    Parameters:
+        graph : GraphDictionary
+        start : <a graph's node>
+
+    Returns:
+        dict :
+
+        int :
+
+    TO DO:
+        Verificar se para diferentes pontos de inicialização retorna a mesma árvore
+        se sim, parece que está funcionando ok.
     '''
     if start not in graph.vertices:
         raise KeyError("start is not in graph vertices")
 
-    mtree = {}
+    mtree = dict()
     total_weight = 0
     queue = PriorityQueue()
 
@@ -76,21 +106,26 @@ def kruskal(graph, start):
 
 
 def bfs(graph, start=None):
-    '''
-    ::Breadth First Search ::
+    '''Breadth First Search
 
-    Retorno: um conjunto do tipo <set> com os vértices encontrados pela busca em largura,
-    a partir do vértice de inicío representado pelo parâmetro start.
+    Parameters
+        graph : GraphDictonary
+        start : a graph's vertice
 
-    Se <start> não está definido no conjunto de arestas do grafo, então é lançado um
-    KeyError.
+    Returns
+        set
+            a set of vertices reached
+
+    Raises
+        AttributeError
+        KeyError
     '''
     if not start:
         raise AttributeError("Start is not defined")
     elif not (start in graph.vertices):
-        raise KeyError("start node is not in graph")     
+        raise KeyError("start node is not in graph")
 
-    
+
     visited_nodes = set()
     queue = deque([start])
 
@@ -105,7 +140,20 @@ def bfs(graph, start=None):
 
 
 def dfs(graph, start = None):
-    ''' Deep First Search'''
+    '''Deep First Search
+
+    Parameters
+        graph : GraphDictionary
+        start : graph's vertice
+
+    Returns
+        set
+            vertices visited
+
+    Raises:
+        AttributeError
+        KeyError
+    '''
 
     if not start :
         raise AttributeError('Start is not defined')
@@ -127,13 +175,19 @@ def dfs(graph, start = None):
 
 def find_connected_components(graph):
     '''
-        Determina as componentes conexas de um grafo dado.
-        Implementação baseada em recursão e busca em largura.
+    It find the connected components given a graph.
 
-        Retorno: uma lista <list> com os componentes encontrados. 
-        Cada componente é representado por um conjunto <set> de vértices que pertencem àquele conjunto.
+    Parameter
+        graph : GraphDictionary
 
-        Por definição os conjuntos encontrados devem possuir interseção vazia.
+    Returns
+        list of set
+            Returns a list of connected components.
+            Which components is represented by a set.
+
+    Notes:
+        This implementation is based in recursion and breadth search.
+        By definition the sets must have empty intersection.
     '''
     all_nodes = set(graph.edges.keys())
 
@@ -151,7 +205,7 @@ def find_connected_components(graph):
         not_visited = nodes - visited
 
         components = [visited]
-        
+
         if len(not_visited):
             n_start = not_visited.pop()
             components += find_by_recursion(graph,start=n_start,nodes=not_visited)
