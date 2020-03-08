@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*- 
 from collections import defaultdict
 
+class _VerticeView(object):
+
+    def __init__(self,graph : dict):
+        self.__edges = graph
+
+    def __len__(self):
+        return len(self.__edges)
+
+    def __contains__(self, item):
+        return item in self.__edges
+    
+    def __iter__(self):
+        return iter(self.__edges.keys())
+
 class GraphDictionary(object):
     '''
         Classe para representar um grafo.
@@ -46,7 +60,8 @@ class GraphDictionary(object):
     @property
     def vertices(self):
         ''' Retorna um iterator para iterar sobre o cojunto de vértices '''
-        return iter(self.__edges.keys())
+        vv = _VerticeView(self.__edges)
+        return vv
 
     def get(self,key,std = None):
         return self.__edges.get(key,std)
