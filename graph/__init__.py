@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from .reader import SteinerTreeProblem, Reader
-from .graph import GraphDictionary
+from .graph import Graph
 
 __all__ = [
-    "GraphDictionary",
+    "Graph",
     "Reader",
     "SteinerTreeProblem"
     ]

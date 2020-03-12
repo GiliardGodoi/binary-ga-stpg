@@ -1,7 +1,7 @@
 import unittest
 from os import path
 
-from graph import GraphDictionary as Graph
+from graph import Graph
 from graph.algorithms import prim
 from graph.reader import Reader
 

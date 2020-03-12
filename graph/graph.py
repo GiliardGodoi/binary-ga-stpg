@@ -15,7 +15,7 @@ class _VerticeView(object):
     def __iter__(self):
         return iter(self.__edges.keys())
 
-class GraphDictionary(object):
+class Graph(object):
     '''
         Classe para representar um grafo.
 

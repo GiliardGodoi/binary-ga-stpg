@@ -2,7 +2,7 @@ import unittest
 from collections import defaultdict
 from os import path
 
-from graph import GraphDictionary
+from graph import Graph
 from graph.graph import _VerticeView
 from graph import Reader
 
@@ -10,9 +10,9 @@ from graph import Reader
 class TestGraphDictionaryDataStructure(unittest.TestCase):
 
     def test_instanceVerticesAsInterger(self):
-        graph = GraphDictionary(vertices=10)
+        graph = Graph(vertices=10)
 
-        self.assertIsInstance(graph,GraphDictionary,msg="Objeto não é da instância esperada")
+        self.assertIsInstance(graph,Graph,msg="Objeto não é da instância esperada")
 
         self.assertIsInstance(graph.vertices,_VerticeView)
         self.assertEqual(list(graph.vertices),list(range(1,11)))
@@ -23,9 +23,9 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
 
     def test_instanceVerticesEmpty(self):
 
-        graph = GraphDictionary()
+        graph = Graph()
 
-        self.assertIsInstance(graph,GraphDictionary)
+        self.assertIsInstance(graph,Graph)
         self.assertIsInstance(graph.vertices,_VerticeView)
         self.assertEqual(len(graph.vertices),0)
 
@@ -40,7 +40,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
 
     def test_verticesAndEdgeInsertion(self):
 
-        graph = GraphDictionary()
+        graph = Graph()
         self.assertEqual(len(graph.vertices),0)
         self.assertEqual(len(graph.edges),0)
 
@@ -97,7 +97,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
 
     def test_ErrorHandle(self):
 
-        graph = GraphDictionary()
+        graph = Graph()
         graph.add_edge(49, 57, weight=50)
         graph.add_edge(78, 57, weight=41)
         graph.add_edge(49, 8, weight=97)
@@ -126,7 +126,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
 
 
     def test_Adjacents(self):
-        graph = GraphDictionary()
+        graph = Graph()
         graph.add_edge(49, 57, weight=50)
         graph.add_edge(78, 57, weight=41)
         graph.add_edge(49, 8, weight=97)
@@ -159,7 +159,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
         '''
         Note that graph[49][90] throw an exception. 
         '''
-        graph = GraphDictionary()
+        graph = Graph()
         graph.add_edge(49, 57, weight=50)
         graph.add_edge(78, 57, weight=41)
         graph.add_edge(49, 8, weight=97)
@@ -173,7 +173,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
 
     def test_TheSameVerticesInsertion(self):
 
-        graph = GraphDictionary()
+        graph = Graph()
 
         self.assertEqual(len(graph.vertices),0)
         self.assertEqual(len(graph.edges),0)
@@ -193,7 +193,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
 
         stp = reader.parser(arquivo)
 
-        graph = GraphDictionary(vertices=stp.nro_nodes,edges=stp.graph)
+        graph = Graph(vertices=stp.nro_nodes,edges=stp.graph)
 
         edges = set()
 

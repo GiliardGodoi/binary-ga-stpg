@@ -2,7 +2,7 @@
 import random
 from collections import defaultdict
 
-from graph.graph import GraphDictionary as Graph
+from graph.graph import Graph
 from graph.priorityqueue import PriorityQueue
 from graph.algorithms import shortest_path_dijkstra as minPath
 from graph.algorithms import prim
@@ -86,7 +86,8 @@ def shortest_path_with_origin(graph, start, terminals):
 def shortest_path_origin_prim(graph, start, terminals):
     '''
         Determinar a árvore de caminhos mínimos <T> dos vértices terminais até o nó <start>
-        Define um subgrafo formado pelos vértices presentes em T com as correspondentes arestas do grafo G <graph>.
+        Define um subgrafo formado pelos vértices presentes em T 
+        com as correspondentes arestas do grafo G <graph>.
         Calcula a MST do subgrafo considerado.
     '''
 

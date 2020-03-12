@@ -1,7 +1,7 @@
 import unittest
 import random
 
-from graph import GraphDictionary as Graph
+from graph import Graph
 from graph.algorithms import bfs, find_connected_components
 
 class TestBreadthFirstSearch(unittest.TestCase):
