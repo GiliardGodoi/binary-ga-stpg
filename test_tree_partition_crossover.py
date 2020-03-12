@@ -11,18 +11,41 @@ from graph.steiner_heuristics import shortest_path_with_origin
 from util import gg_rooted_tree
 
 class Subset:
-    
-    def __init__(self,parent, rank):
-        self.parent = parent
-        self.rank = rank
+    def __init__(self, v1, v2):
         
-
-def find(subsets : list):
-    pass
-
-
-def union(subsets,u : Subset,v : Subset):
-    pass
+        self.elements = GraphDictionary()
+        self.elements.add_edge(v1,v2)
+        
+    def add(self,v1, v2):
+        self.elements.add_edge(v1,v2)
+        
+        return True
+    
+    
+    def __len__(self):    
+        return len(self.elements)
+    
+    
+    def __iter__(self):
+        return self.elements.gen_undirect_edges()
+               
+        
+subsets = dict()
+    
+def build_disjoint_path(rep, other):
+    
+        
+    if not rep in subsets:
+        subsets[rep] = Subset(rep, other)
+        
+    else :
+        subsets[rep].add(rep, other)
+    
+    # atualizando a representação nas duas partições
+    if other in subsets:
+            subsets[other] = subsets[rep]
+            
+    return subsets[rep]
 
 
 if __name__ == "__main__":
@@ -56,6 +79,32 @@ if __name__ == "__main__":
     for v, u in subtree_2.gen_undirect_edges():
         if not subtree_1.has_edge(v,u) :
             edges_disjoint_2.add((v,u))
+        else:
+            print("has edge",v,u)
             
+            
+    disjoints_paths = dict()
+                   
     
+    for v, u in edges_disjoint_2:
+        
+        if subtree_1.has_node(v) and subtree_1.has_node(u):
+            disjoints_paths[(v,u)] = Subset(v, u)
+            
+        elif not subtree_1.has_node(v) and subtree_1.has_node(u):
+            build_disjoint_path(v,u)
+            
+        elif subtree_1.has_node(v) and not subtree_1.has_node(u):
+            build_disjoint_path(u,v)
+            
+        else :
+            ss = build_disjoint_path(v,u)
+            if not u in subsets:
+                subsets[u] = ss
+            
+            
+            
+    for i in subsets:
+        print(subsets[i].elements)
+        print('\n')
 
