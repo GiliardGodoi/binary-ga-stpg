@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from collections import deque
+from collections import deque, defaultdict
 from .priorityqueue import PriorityQueue
 
 '''
@@ -38,8 +38,10 @@ def shortest_path_dijkstra(graph, source):
         <https://github.com/cs-oak/Fibonacci-Heaps/blob/master/dijkstra.py>
         Its use an other Priority Queue implemantation which is not used by Sharma.
     '''
-    dist = {source : 0}
-    prev = {}
+    dist = defaultdict(lambda : float("inf"))
+    dist[source] = 0
+
+    prev = {source : None}
     done = {}
 
     pqueue = PriorityQueue()
