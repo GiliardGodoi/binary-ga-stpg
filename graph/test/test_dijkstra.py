@@ -1,8 +1,6 @@
 import unittest
-from os import path
 
 from graph.graph import Graph
-from graph.reader import Reader
 from graph.algorithms import shortest_path_dijkstra as dijkstra
 
 class TestDijkstraImplementation(unittest.TestCase):
