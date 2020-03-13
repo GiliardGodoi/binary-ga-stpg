@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-import random
 from collections import defaultdict
 
 from graph.graph import Graph
 from graph.priorityqueue import PriorityQueue
-from graph.algorithms import shortest_path_dijkstra as minPath
+from graph.algorithms import shortest_path_dijkstra as dijkstra
 from graph.algorithms import prim
 
 
 def shortest_path(graph, start, terminals):
 
-    dist, prev = minPath(graph,start)
+    dist, prev = dijkstra(graph,start)
 
     distancias = defaultdict(dict)
     distancias[start] = dist
@@ -30,7 +29,7 @@ def shortest_path(graph, start, terminals):
         t = target
 
         if target not in distancias:
-                dist, prev = minPath(graph,target)
+                dist, prev = dijkstra(graph,target)
                 distancias[target] = dist
                 previos[target] = prev
                 for tmp in terminals:
@@ -44,7 +43,7 @@ def shortest_path(graph, start, terminals):
                 t = u
 
                 if u not in distancias:
-                    dist, prev = minPath(graph,u)
+                    dist, prev = dijkstra(graph,u)
                     distancias[u] = dist
                     previos[u] = prev
                     for tmp in terminals:
@@ -65,7 +64,7 @@ def shortest_path_with_origin(graph, start, terminals):
     Um vértice terminal ou está nas folhas da árvore formada, ou está no caminho de outro nó terminal.
     '''
 
-    dist, prev = minPath(graph,start)
+    dist, prev = dijkstra(graph,start)
     custo = 0
 
     stree = Graph()
@@ -88,10 +87,10 @@ def shortest_path_origin_prim(graph, start, terminals):
         Determinar a árvore de caminhos mínimos <T> dos vértices terminais até o nó <start>
         Define um subgrafo formado pelos vértices presentes em T 
         com as correspondentes arestas do grafo G <graph>.
-        Calcula a MST do subgrafo considerado.
+        Calcula a MST do subgrafo considerado e realiza a poda da MST.
     '''
 
-    dist, prev = minPath(graph,start)
+    dist, prev = dijkstra(graph, start)
 
     selectedNodes = set([start])
 
@@ -107,19 +106,11 @@ def shortest_path_origin_prim(graph, start, terminals):
 
     for v in selectedNodes:
         for u in graph.adjacent_to(v):
-            if (u in selectedNodes) :
+            if (u in selectedNodes):
                 w = graph.edges[v][u]
-                subgraph.add_edge(v,u,weight=w)
+                subgraph.add_edge(v, u, weight=w)
 
-    previous, cost = prim(subgraph,start)
-
-    subtree = Graph()
-
-    while previous :
-        v, u = previous.popitem()
-        if v != u :
-            w = graph[v][u]
-            subtree.add_edge(u,v,weight=w)
+    subtree, cost = prunning_mst(subgraph, start, terminals)
 
     return subtree, cost
 
