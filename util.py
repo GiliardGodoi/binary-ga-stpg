@@ -3,7 +3,7 @@ from collections import deque
 from graph.graph import Graph
 
 
-def check_circles_dfs(graph,start):
+def check_cycle_dfs(graph,start):
     '''
         Verifica se existe um ciclo em um grafo a partir de um vértice.
     '''
@@ -14,7 +14,7 @@ def check_circles_dfs(graph,start):
 
     stack.append(start)
 
-    has_circle = False
+    has_cycle = False
 
     while stack:
         v = stack.pop()
@@ -24,9 +24,10 @@ def check_circles_dfs(graph,start):
                 stack.append(u)
                 prev[u] = v
             elif not prev[v] == u :
-                has_circle = True
+                has_cycle = True
 
-    return has_circle,visited
+    # return has_circle, visited
+    return has_cycle, visited
 
 
 def gg_total_weight(graph : Graph) -> int:
