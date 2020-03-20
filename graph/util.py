@@ -101,7 +101,7 @@ def gg_rooted_tree(tree : Graph, root) -> dict:
     '''
 
     if not root in tree.vertices:
-        raise AttributeError("<value> for root isn't a vertice for the graph")
+        raise AttributeError(f"value <{root}> for root isn't a vertice for the graph")
 
     rrtree = dict()
     rrtree[root] = None
@@ -194,7 +194,7 @@ def max_node_degree(graph : Graph):
 
 def dfs_tree(graph : Graph, start_node):
     '''
-    It procedes a Deep First Search in the graph. 
+    It procedes a Deep First Search in the graph.
     Compute a Deep First Tree wich vertice is reached for the first time.
 
     Parameters
