@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import os
 from collections import defaultdict
 
 class SteinerTreeProblem(object):
@@ -59,7 +60,7 @@ class Reader(object):
                 _creator = _list[0] if len(_list) else "Creator unviable"
                 self.STP.creator = _creator
 
-            elif "Remark" in line : 
+            elif "Remark" in line :
                 remark = _list[0] if len(_list) else "Creator unviable"
                 self.STP.remark = remark
 
@@ -107,3 +108,76 @@ class Reader(object):
 
             elif "END" in line:
                 break
+
+class ReaderORLibrary():
+
+    def __init__(self):
+        pass
+
+    def __define_stp(self, file_name : str):
+
+        STP = SteinerTreeProblem()
+
+        index = 0
+        if '\\' in file_name:
+            index = file_name.rfind('\\') + 1
+
+        STP.file_name = file_name[index:]
+
+        if STP.file_name.startswith("stein"):
+            # "An SST-based algorithm for the Steiner problem in graphs" Networks 19 (1989) 1-16.
+            STP.name = STP.file_name.strip('steinx.').upper()
+            STP.creator = "J. E. Beasley"
+            STP.remark = "Sparse graph with random weights"
+        elif STP.file_name.startswith("dv") :
+            ##"Efficient path and vertex exchange in Steiner tree algorithms", Networks 29, 89-105 (1997)
+            STP.name = STP.file_name.upper()
+            STP.creator = "C. Duin and S. Voss"
+            STP.remark = "Incidence weights problems"
+
+        return STP
+
+
+    def parser(self, file_name):
+
+        if not os.path.exists(file_name):
+            raise FileExistsError(f'{file_name} does not exists')
+
+        STP = self.__define_stp(file_name)
+
+        with open(file_name, 'r') as FILE:
+            # number of vertices, number of edges
+            line = FILE.readline()
+            entries = [ int(e) for e in re.findall(r'(\d+)', line) if e.isdecimal()]
+            assert len(entries) == 2, "First line isn't equal 2 numbers"
+
+            STP.nro_nodes = entries[0]
+            STP.nro_edges = entries[1]
+
+            # for each edge: the end vertices and the cost of the edge
+            counter = 0
+            while counter < STP.nro_edges:
+                line = FILE.readline()
+                entries = [ int(e) for e in re.findall(r'(\d+)', line) if e.isdecimal()]
+                assert len(entries) == 3, f'Edge line has not 3 values. Line {(counter + 1)}'
+                u = entries[0]
+                v = entries[1]
+                weight = entries[2]
+
+                STP.graph[u][v] = weight
+                STP.graph[v][u] = weight
+                counter += 1
+
+            # number of vertices to be connected together
+            line = FILE.readline()
+            entry = [ int(e) for e in re.findall(r'(\d+)', line) if e.isdecimal()]
+            assert len(entry) == 1, "Number of terminals have to be just one"
+            STP.nro_terminals = entry[0]
+
+            # the vertex numbers for the vertices that are to be connected together
+            line = FILE.readline()
+            entries = [ int(e) for e in re.findall(r'(\d+)', line) if e.isdecimal()]
+            assert len(entries) == entry[0], "Numer of terminals is not ok"
+            STP.terminals = entries
+
+        return STP
