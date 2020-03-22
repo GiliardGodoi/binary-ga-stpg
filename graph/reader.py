@@ -110,7 +110,11 @@ class Reader(object):
                 break
 
 class ReaderORLibrary():
+    '''
+    Read a Steiner Tree Problem instance from a OR-Library file format.
 
+    For more details visit <http://people.brunel.ac.uk/~mastjjb/jeb/orlib/steininfo.html>
+    '''
     def __init__(self):
         pass
 
