@@ -3,17 +3,17 @@ from collections import defaultdict
 
 class _VerticeView(object):
 
-    def __init__(self,graph : dict):
-        self.__edges = graph
+    def __init__(self, edges : dict):
+        self.__vertices = edges.keys()
 
     def __len__(self):
-        return len(self.__edges)
+        return len(self.__vertices)
 
     def __contains__(self, item):
-        return item in self.__edges
+        return item in self.__vertices
     
     def __iter__(self):
-        return iter(self.__edges.keys())
+        return iter(self.__vertices)
 
 class Graph(object):
     '''
