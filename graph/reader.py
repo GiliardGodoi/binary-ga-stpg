@@ -180,8 +180,15 @@ class ReaderORLibrary():
 
             # the vertex numbers for the vertices that are to be connected together
             line = FILE.readline()
-            entries = [ int(e) for e in re.findall(r'(\d+)', line) if e.isdecimal()]
-            assert len(entries) == entry[0], "Numer of terminals is not ok"
-            STP.terminals = entries
+
+            # for some problems' instance, the terminals are represented in more than one line
+            terminals = list()
+            while line:
+                entries = [ int(e) for e in re.findall(r'(\d+)', line) if e.isdecimal()]
+                terminals.extend(entries)
+                line = FILE.readline()
+
+            assert len(terminals) == entry[0], "Numer of terminals is not ok"
+            STP.terminals = terminals
 
         return STP
