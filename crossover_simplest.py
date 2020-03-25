@@ -10,7 +10,7 @@ import random
 
 from graph import Graph, Reader
 from graph.steiner_heuristics import shortest_path_with_origin
-from util import gg_rooted_tree, gg_union
+from graph.util import gg_rooted_tree, gg_union
 from draw import draw_common
 
 if __name__ == "__main__":

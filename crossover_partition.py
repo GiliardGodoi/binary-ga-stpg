@@ -4,24 +4,57 @@ Created on Tue Mar 17 21:59:09 2020
 
 @author: Giliard Almeida de Godoi
 """
-from collections import deque
+from collections import deque, defaultdict
+from operator import attrgetter
+import random
 
 from graph import Graph
-from util import gg_rooted_tree
+from graph.steiner_heuristics import shortest_path_with_origin, shortest_path
+from graph.util import gg_rooted_tree, gg_total_weight
 
-class Chromossome():
+class Chromossome(object):
 
     def __init__(self, subtree : Graph, start_node, fitness=0):
         self.subtree = subtree
         self.start_node = start_node
-        self.fitness = fitness
 
-class PartitionCrossover():
+        self.__fitness = fitness if fitness else 0
+        self.__score = fitness  if fitness else 0
+        self.was_normalized = False
+
+    @property
+    def fitness(self):
+        return self.__fitness
+
+    @fitness.setter
+    def fitness(self, value):
+        self.__fitness = value
+        self.__score = value
+        self.was_normalized = False
+
+    @property
+    def score(self):
+        return self.__score
+
+    @score.setter
+    def score(self, value):
+        self.__score = value
+        self.was_normalized = True
+
+    def __str__(self):
+        return f'fitness: {self.__fitness}'
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class PartitionCrossover(object):
 
     def __init__(self, graph_data : Graph):
         self.graph = graph_data
+        self.counter = defaultdict()
 
-    def crossover(self, parent_1 : Chromossome, parent_2 : Chromossome):
+    def crossing(self, parent_1 : Chromossome, parent_2 : Chromossome):
 
         subtree_1 = parent_1.subtree
         subtree_2 = parent_2.subtree
@@ -69,7 +102,7 @@ class PartitionCrossover():
         counter = 0
 
         for ss in subsets :
-            assert len(ss['common']) >= 2, 'Vertices em comun deve ser maior ou igual a 2'
+            # assert len(ss['common']) >= 2, 'Vertices em comun deve ser maior ou igual a 2'
             v = ss['common'][0]
             subsets_2 = {'edges' : set(),'common' : [v], 'cost' : 0}
             for u in ss['common'][1:] :
@@ -107,8 +140,10 @@ class PartitionCrossover():
                 ww = self.graph.weight(v, u)
                 cost_child += ww
                 GG_child.add_edge(v, u, weight= ww)
-                
-        
+
+        ## collecting data
+
+
         return Chromossome(GG_child, s1, cost_child)
 
 
@@ -218,6 +253,143 @@ class PartitionCrossover():
 
         return GG_child
 
+
+class GeneticAlgorithm(object):
+
+    def __init__(self, graph_problem, terminals):
+
+        self.graph = graph_problem
+        self.terminals = terminals
+        self.population = list()
+        self.best_chromossome = None
+        self.population_size = 0
+
+        self.gen_population_method = shortest_path
+
+
+    def set_crossover_operator(self, operator, probability):
+        self.cross_operator = operator
+        self.cross_p = probability
+
+    # def set_gen_population_method(self, heuristic):
+    #     self.gen_population_method = heuristic
+
+
+    def update_best_chromossome(self, ibest):
+        if not self.best_chromossome:
+            self.best_chromossome = ibest
+        elif ibest.fitness < self.best_chromossome.fitness :
+            self.best_chromossome = ibest
+
+
+
+    def initial_population(self, size):
+
+        assert (size % 2) == 0, "Population size must be a even number"
+        self.population_size = size
+        initial_nodes = set()
+        population = list()
+
+        ## inicialmente escolher todos os vértices terminais
+        qtd = 0
+        while qtd < self.population_size and qtd < len(self.terminals):
+            initial_nodes.add(self.terminals[qtd])
+            qtd += 1
+
+        best_cost = float("inf")
+        best_for_now = None
+
+        for node in initial_nodes:
+            if random.random() < 0.5 :
+                subtree, cost = shortest_path(self.graph, node, self.terminals)
+            else :
+                subtree, cost = shortest_path_with_origin(self.graph, node, self.terminals)
+
+            chromossome = Chromossome(subtree, node, cost)
+            population.append(chromossome)
+
+            if cost < best_cost:
+                best_cost = cost
+                best_for_now = chromossome
+
+        self.population = population
+        self.update_best_chromossome(best_for_now)
+
+    def recombine(self):
+
+        children = list()
+
+        for p1, p2 in zip(self.population[0::2],self.population[1::2]):
+            # if random.random() < self.cross_p:
+            child = self.cross_operator.crossing(p1, p2)
+            children.append(child)
+
+
+        self.population.extend(children)
+
+        ## MOMENTO GAMBIARRA :: children não gera a mesma quantidade de filhos que os pais
+        # então é aplicado um "elitismo" de gambiarra
+        # self.sort_population()
+
+        # # # momento gambiarra
+        # self.population = self.population[:self.population_size]
+
+    def evaluate(self):
+
+        best_for_now = None
+        best_cost = float("inf")
+
+        for chromossome in self.population:
+            cost = gg_total_weight(chromossome.subtree)
+            chromossome.fitness = cost
+
+            if cost < best_cost:
+                best_cost = cost
+                best_for_now = chromossome
+                # print(best_cost, end="  ")
+
+        self.update_best_chromossome(best_for_now)
+
+    def sort_population(self):
+        self.population.sort(key=attrgetter("fitness"))
+
+    def normalized_fitness(self):
+        total = sum([c.fitness for c in self.population])
+
+        for c in self.population:
+            c.score = (c.fitness / total) * 100
+
+
+    def selection(self):
+        # self.tournament_selection()
+        self.wheel_selection()
+
+    def mutate(self):
+        raise NotImplementedError("Forma de mutação não definida")
+
+    def tournament_selection(self):
+        selected = list()
+        K = 2
+
+        for _ in range(self.population_size):
+            tournament = random.sample(self.population, K)
+            selected.append(max(tournament, key=attrgetter("score")))
+
+        self.population = selected
+
+    def ranking_selection(self):
+        pass
+
+    def wheel_selection(self):
+        ''' K roulette wheel spins (weighted sampling with replacement)'''
+        population = self.population
+        weights = [ c.fitness for c in population]
+        total = sum(weights)
+        weights = [1 - (w / total) for w in weights]
+
+        self.population = random.choices(population, weights, k=self.population_size)
+
+
 if __name__ == "__main__":
     import random
     from os import path
@@ -240,10 +412,10 @@ if __name__ == "__main__":
 
     s2 = random.choice(stp.terminals)
     subtree_2, cost2 = shortest_path_with_origin(graph, s2, stp.terminals)
-    
+
     parent_1 = Chromossome(subtree_1, s1, cost1)
     parent_2 = Chromossome(subtree_2, s2, cost2)
-    
+
     PX = PartitionCrossover(graph)
-    
-    child = PX.crossover(parent_1, parent_2)
+
+    child = PX.crossing(parent_1, parent_2)
