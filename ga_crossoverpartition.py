@@ -18,8 +18,8 @@ class Chromossome(object):
         self.subtree = subtree
         self.start_node = start_node
 
-        self.__fitness = fitness if fitness else 0
-        self.__score = fitness  if fitness else 0
+        self.__fitness = fitness
+        self.__score = fitness
         self.was_normalized = False
 
     @property
@@ -285,6 +285,7 @@ class GeneticAlgorithm(object):
 
     def initial_population(self, size):
 
+        assert size > 0, "Population must have more than 0 individuals"
         assert (size % 2) == 0, "Population size must be a even number"
         self.population_size = size
         initial_nodes = set()
