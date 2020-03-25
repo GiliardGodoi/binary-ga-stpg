@@ -19,7 +19,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
         self.assertEqual(len(graph.vertices),10)
 
         self.assertIsInstance(graph.edges,defaultdict)
-        # self.assertEqual(len(graph.edges),0) 
+        # self.assertEqual(len(graph.edges),0)
 
     def test_instanceVerticesEmpty(self):
 
@@ -157,7 +157,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
     # @unittest.expectedFailure
     def test_AcessErrors(self):
         '''
-        Note that graph[49][90] throw an exception. 
+        Note that graph[49][90] throw an exception.
         '''
         graph = Graph()
         graph.add_edge(49, 57, weight=50)
@@ -185,7 +185,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
         self.assertFalse(graph.has_edge(5,5))
 
     def test_GenerateUndirectEdges(self):
-        diretorio_dados = "datasets"
+        diretorio_dados = path.join("datasets", "osti")
         arquivo_dados = "b01.stp"
         arquivo = path.join(diretorio_dados, arquivo_dados)
 
@@ -203,7 +203,7 @@ class TestGraphDictionaryDataStructure(unittest.TestCase):
         self.assertEqual(len(edges),stp.nro_edges)
 
     def test_read_b01(self):
-        diretorio_dados = "datasets"
+        diretorio_dados = path.join("datasets", "osti")
         arquivo_dados = "b01.stp"
         arquivo = path.join(diretorio_dados, arquivo_dados)
 

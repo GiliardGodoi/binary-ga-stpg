@@ -7,6 +7,7 @@ class PriorityQueue():
         Priority Queue implementation
 
         There is a tradeoff between speed and memory.
+
         In this implementations we've choosed the solution presented in official documentation for heapq module.
         More details in <>
 

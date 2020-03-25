@@ -15,9 +15,9 @@ class TestSTPGHeuristicas(unittest.TestCase):
 
     def setUp(self):
         reader = Reader()
-        self.stpg_instance = reader.parser(path.join("datasets","b13.stp"))
+        self.stpg_instance = reader.parser(path.join("datasets", "osti", "b13.stp"))
 
-        self.graph = Graph(vertices = self.stpg_instance.nro_nodes, 
+        self.graph = Graph(vertices = self.stpg_instance.nro_nodes,
                             edges=self.stpg_instance.graph)
 
         random.seed()

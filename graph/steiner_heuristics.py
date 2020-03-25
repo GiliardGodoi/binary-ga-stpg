@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 
-from graph.graph import Graph
+from graph import Graph
 from graph.priorityqueue import PriorityQueue
 from graph.algorithms import shortest_path_dijkstra as dijkstra
 from graph.algorithms import prim
@@ -55,7 +55,8 @@ def shortest_path(graph, start, terminals):
 
 
 def shortest_path_with_origin(graph, start, terminals):
-    ''' Adaptação para o algortimo Shortest Path with Origin Heuristic
+    '''
+    Adaptação para o algortimo Shortest Path with Origin Heuristic
 
     A Árvore solução Tspoh é contruida iterativamente: um vertice terminal é incluido por vez.
 
@@ -85,10 +86,10 @@ def shortest_path_with_origin(graph, start, terminals):
 
 def shortest_path_origin_prim(graph, start, terminals):
     '''
-        Determinar a árvore de caminhos mínimos <T> dos vértices terminais até o nó <start>
-        Define um subgrafo formado pelos vértices presentes em T
-        com as correspondentes arestas do grafo G <graph>.
-        Calcula a MST do subgrafo considerado e realiza a poda da MST.
+    Determinar a árvore de caminhos mínimos <T> dos vértices terminais até o nó <start>
+    Define um subgrafo formado pelos vértices presentes em T
+    com as correspondentes arestas do grafo G <graph>.
+    Calcula a MST do subgrafo considerado e realiza a poda da MST.
     '''
 
     dist, prev = dijkstra(graph, start)
@@ -118,11 +119,11 @@ def shortest_path_origin_prim(graph, start, terminals):
 
 def prunning_mst(graph, start, terminals):
     '''
-        Determina a MST do grafo por meio do algoritmo de Prim.
-        Realiza a poda considerando os nós terminais como os nós folhas até a raiz <start>
-        Considera-se um algoritmo determinístico dado os mesmos parâmetros.
+    Determina a MST do grafo por meio do algoritmo de Prim.
+    Realiza a poda considerando os nós terminais como os nós folhas até a raiz <start>
+    Considera-se um algoritmo determinístico dado os mesmos parâmetros.
 
-        Resulta sempre na mesma árvore para qualquer vértice <start> considerado.
+    Resulta sempre na mesma árvore para qualquer vértice <start> considerado.
     '''
     mst, _ = prim(graph,start)
 

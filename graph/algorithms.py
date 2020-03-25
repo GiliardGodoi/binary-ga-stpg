@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import deque, defaultdict
-from .priorityqueue import PriorityQueue
+from graph.priorityqueue import PriorityQueue
 
 '''
     This module contains the most commons algorithms for work with graphs.

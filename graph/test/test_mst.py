@@ -9,9 +9,8 @@ class TestMinimumSpanningTree(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        diretorio_dados = "datasets"
-        arquivo_dados = "b01.stp"
-        arquivo = path.join(diretorio_dados, arquivo_dados)
+
+        arquivo = path.join("datasets", "osti", "b01.stp")
 
         reader = Reader()
 
