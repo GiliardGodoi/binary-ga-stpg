@@ -129,7 +129,7 @@ def draw_tree(graph, root : int):
     if isinstance(graph,nx.Graph):
         G = graph
     elif isinstance(graph,Graph):
-        G = nx.Graph(sub1.edges)
+        G = nx.Graph(graph.edges)
     else:
         raise TypeError("Type graph not recognizable")
 

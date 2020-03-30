@@ -129,7 +129,7 @@ def prunning_mst(graph, start, terminals):
 
     mst[start] = False
 
-    gg = Graph()
+    mst_trim = Graph()
 
     total_weight = 0
 
@@ -137,11 +137,11 @@ def prunning_mst(graph, start, terminals):
         node = t
         while mst[node]:
             prev = mst[node]
-            if gg.has_edge(prev,node):
+            if mst_trim.has_edge(prev,node):
                 break # já foi inserido esse ramo
             weight = graph[prev][node]
             total_weight += weight
-            gg.add_edge(prev,node,weight=weight)
+            mst_trim.add_edge(prev,node,weight=weight)
             node = prev
 
-    return gg, total_weight
+    return mst_trim, total_weight

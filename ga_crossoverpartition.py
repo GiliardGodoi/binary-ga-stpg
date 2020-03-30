@@ -4,13 +4,17 @@ Created on Tue Mar 17 21:59:09 2020
 
 @author: Giliard Almeida de Godoi
 """
-from collections import deque, defaultdict
-from operator import attrgetter
+import csv
+import os
+import json
 import random
+from collections import defaultdict, deque
+from operator import attrgetter
 
 from graph import Graph
-from graph.steiner_heuristics import shortest_path_with_origin, shortest_path
+from graph.steiner_heuristics import shortest_path, shortest_path_with_origin
 from graph.util import gg_rooted_tree, gg_total_weight
+
 
 class Chromossome(object):
 
@@ -260,28 +264,29 @@ class GeneticAlgorithm(object):
 
         self.graph = graph_problem
         self.terminals = terminals
+
         self.population = list()
-        self.best_chromossome = None
         self.population_size = 0
 
+        self.best_chromossome = None
+
         self.gen_population_method = shortest_path
+
+        self.datalog = defaultdict(list)
+        # headers to csv file
+        self.datalog['crossover'].append(['A_parent', 'B_parent', 'Offspring'])
+
 
 
     def set_crossover_operator(self, operator, probability):
         self.cross_operator = operator
         self.cross_p = probability
 
-    # def set_gen_population_method(self, heuristic):
-    #     self.gen_population_method = heuristic
-
-
     def update_best_chromossome(self, ibest):
         if not self.best_chromossome:
             self.best_chromossome = ibest
         elif ibest.fitness < self.best_chromossome.fitness :
             self.best_chromossome = ibest
-
-
 
     def initial_population(self, size):
 
@@ -318,22 +323,22 @@ class GeneticAlgorithm(object):
 
     def recombine(self):
 
-        children = list()
+        offsprings = list()
+        pool_size = self.population_size
+        count = 0
 
-        for p1, p2 in zip(self.population[0::2],self.population[1::2]):
-            # if random.random() < self.cross_p:
+
+        while count < pool_size:
+            p1, p2 = random.sample(self.population, k=2)
             child = self.cross_operator.crossing(p1, p2)
-            children.append(child)
+            offsprings.append(child)
 
+            fitness = [p1.fitness, p2.fitness, child.fitness]
+            self.datalog["crossover"].append(fitness)
 
-        self.population.extend(children)
+            count += 1
 
-        ## MOMENTO GAMBIARRA :: children não gera a mesma quantidade de filhos que os pais
-        # então é aplicado um "elitismo" de gambiarra
-        # self.sort_population()
-
-        # # # momento gambiarra
-        # self.population = self.population[:self.population_size]
+        self.updata_population(offsprings)
 
     def evaluate(self):
 
@@ -360,7 +365,6 @@ class GeneticAlgorithm(object):
         for c in self.population:
             c.score = (c.fitness / total) * 100
 
-
     def selection(self):
         # self.tournament_selection()
         self.wheel_selection()
@@ -385,10 +389,34 @@ class GeneticAlgorithm(object):
         ''' K roulette wheel spins (weighted sampling with replacement)'''
         population = self.population
         weights = [ c.fitness for c in population]
-        total = sum(weights)
-        weights = [1 - (w / total) for w in weights]
 
         self.population = random.choices(population, weights, k=self.population_size)
+
+    def updata_population(self, new_population):
+
+        assert len(self.population) == len(new_population), "It is not the same size"
+        ## Replace all
+        self.population = new_population
+
+    def report_log(self, folder=''):
+
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+
+        for key, content in self.datalog.items():
+            dest = os.path.join(folder, f'{key}.csv')
+            with open(dest, "w", newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(content)
+
+        ## best solution found
+        best_solution_file = os.path.join(folder,"best_solution.json")
+        if os.path.exists(best_solution_file):
+            os.remove(best_solution_file)
+
+        with open(best_solution_file, "w") as ff:
+            json.dump(self.best_chromossome.subtree.edges, fp=ff, indent=4)
+
 
 
 if __name__ == "__main__":

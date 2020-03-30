@@ -31,7 +31,7 @@ class SimulationLogger(Logger):
 
     A intenção é reutilizar esse código nos demais módulos de simulações.
     '''
-    def __init__(self, prefix='', outputfolder='outputdata'):
+    def __init__(self, prefix='', outputfolder='default'):
         self.prefix = prefix
         self.mainfolder = outputfolder
         if outputfolder and (not os.path.exists(outputfolder)):

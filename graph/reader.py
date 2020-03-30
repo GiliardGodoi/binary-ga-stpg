@@ -4,6 +4,29 @@ import re
 import os
 from collections import defaultdict
 
+problems_class = {
+        'b' : {'max' : 18},
+        'c' : {'max' : 20},
+        'd' : {'max' : 20},
+        'e' : {'max' : 20},
+        'others' : ['dv80.txt', 'dv160.txt', 'dv320.txt']
+    }
+
+def generate_file_names(key = None):
+
+    if isinstance(problems_class[key], list) :
+        for item in problems_class[key]:
+            yield item
+
+    elif isinstance(problems_class[key], dict) :
+        counter = 1
+        MAX = problems_class[key]['max']
+        while counter <= MAX :
+            yield f"stein{key}{counter}.txt"
+            counter += 1
+
+## ================================================
+
 class SteinerTreeProblem(object):
     '''
         The main purpose for this class is represent in memory the Steiner Problem's instance in memory.
@@ -108,6 +131,7 @@ class Reader(object):
 
             elif "END" in line:
                 break
+
 
 class ReaderORLibrary():
     '''
