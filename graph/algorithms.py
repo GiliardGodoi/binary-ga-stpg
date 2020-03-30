@@ -177,14 +177,14 @@ def dfs(graph, start = None):
 
 def find_connected_components(graph):
     '''
-    It find the connected components given a graph.
+    It finds the connected components given a graph.
 
     Parameter
-        graph : GraphDictionary
+        graph : Graph
 
     Returns
-        list of set
-            Returns a list of connected components.
+        list of set:
+            Return a list of connected components.
             Which components is represented by a set.
 
     Notes:
