@@ -4,8 +4,18 @@ from graph.graph import Graph
 
 
 def check_cycle_dfs(graph,start):
-    '''
-        Verifica se existe um ciclo em um grafo a partir de um vértice.
+    '''Check if there is a cycle in a graph from a vertex, using DFS.
+
+    Parameters
+        graph : Graph
+        start : Vertice
+
+    Returns
+        bool:
+            True means the graph has a cycle, otherwise False.
+        set :
+            All reacheable nodes from <start> node
+
     '''
     stack = deque()
 
@@ -30,8 +40,16 @@ def check_cycle_dfs(graph,start):
     return has_cycle, visited
 
 
-def gg_total_weight(graph : Graph) -> int:
-    ''' Retorna a soma total dos pesos das arestas do grafo'''
+def gg_total_weight(graph : Graph):
+    '''Returns the total weight of a graph.
+
+    Parameter
+        graph : Graph
+
+    Return
+        int or float :
+            total weight of a graph
+    '''
     total = 0
     for v,u in graph.gen_undirect_edges():
         w = graph.weight(v,u)
@@ -41,7 +59,7 @@ def gg_total_weight(graph : Graph) -> int:
 
 
 def gg_edges_number(graph : Graph) -> int:
-    ''' Retorna o número de arestas em um grafo'''
+    '''Returns the number of edges of a graph'''
     nro = 0
     for _ in graph.gen_undirect_edges():
         nro += 1
@@ -49,27 +67,25 @@ def gg_edges_number(graph : Graph) -> int:
     return nro
 
 
-def gg_common_edges(self, other, start_node):
-    '''
-        Retorna as arestas em comum a dois grafos
-    '''
+def gg_common_edges(graph_a, graph_b, start_node):
+    '''Returns a set of common edges between two graphs'''
     common_edges = set()
     queue = deque()
     nodes_done = set()
 
     _stantard_edge = lambda x,y : (min(x,y), max(x,y))
 
-    for u in self.adjacent_to(start_node):
+    for u in graph_a.adjacent_to(start_node):
         queue.append((start_node,u))
 
     while queue:
         v, u = queue.pop()
-        if other.has_edge(v,u):
+        if graph_b.has_edge(v,u):
             common_edges.add(_stantard_edge(v,u))
 
         nodes_done.add(v)
 
-        for w in self.adjacent_to(u):
+        for w in graph_a.adjacent_to(u):
             if not w in nodes_done :
                 queue.append((u,w))
 
@@ -77,7 +93,7 @@ def gg_common_edges(self, other, start_node):
 
 
 def gg_union(A : Graph, B : Graph) -> Graph:
-    ''' Retorna o Grafo união de outros dois grafos '''
+    '''Return the union graph'''
 
     C = Graph()
 
@@ -94,8 +110,7 @@ def gg_union(A : Graph, B : Graph) -> Graph:
 
 
 def gg_rooted_tree(tree : Graph, root) -> dict:
-    '''
-    Represents a tree like a dictionary where the key is a vertice and the
+    '''Represents a tree like a dictionary where the key is a vertice and the
     value is its previous parent.
     The root vertice hasn't previous parent. So its value is None.
     '''
@@ -122,12 +137,14 @@ def gg_rooted_tree(tree : Graph, root) -> dict:
 
 
 def find_tree_path(rtree : dict, a, b):
-    '''
+    '''Find a path between two vertices in a tree that it's represented
+    as a dictionary of precedents.
+
     Parameters
         rtree : dict
-            dicionário que representa uma árvore. Ver gg_rooted_tree method
+            dictionary of precedents vertices in a rooted tree. See gg_rooted_tree method
         a, b : graph's vertices
-            vértices inicial e final
+            initial and final path vertices
 
     TO DO:
     - unir as duas listas
@@ -149,7 +166,7 @@ def find_tree_path(rtree : dict, a, b):
 
 
 def gg_tree_center(tree : Graph):
-    ''' Retorna os vértices que são centros de uma árvore'''
+    '''Compute the center of a tree'''
 
     vertices = set(tree.vertices)
     done = set()
@@ -186,15 +203,14 @@ def list_degree(graph : Graph):
 
 
 def max_node_degree(graph : Graph):
-    '''Retorna o vértice com o maior grau de adjacência'''
+    '''Return the vertex with the highest degree'''
 
     aa = list_degree(graph)
     return max(aa,key=lambda x: aa[x])
 
 
 def dfs_tree(graph : Graph, start_node):
-    '''
-    It procedes a Deep First Search in the graph.
+    '''It procedes a Deep First Search in the graph.
     Compute a Deep First Tree wich vertice is reached for the first time.
 
     Parameters
