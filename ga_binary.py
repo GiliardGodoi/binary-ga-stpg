@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from operator import attrgetter
 
-from tqdm import tqdm
+import statistics
 
 from datalogger import SimulationLogger, Logger
 from graph import Graph, ReaderORLibrary, SteinerTreeProblem
@@ -138,6 +138,7 @@ class GeneticAlgorithm(object):
         self.tx_crossover = 0.85
 
         self.best_chromosome = None
+        self.last_time_improvement = 0
 
         # Quantidade de vértices não obrigatórios.
         self.chromosome_length = STPG.nro_nodes - STPG.nro_terminals
@@ -157,8 +158,9 @@ class GeneticAlgorithm(object):
 
         self.logger = SimulationLogger()
         # self.logger.add_header('crossover','A_parent', 'B_parent')
-        self.logger.add_header('best_fitness', 'cost', 'fitness')
-        self.logger.add_header('best_from_round', 'cost', 'fitness')
+        self.logger.add_header('best_fitness','iteration', 'cost', 'fitness')
+        self.logger.add_header('best_from_round', 'iteration', 'cost', 'fitness')
+        self.logger.add_header("evaluation","iteration" , "penalization", "average", "std_deviation")
 
     def __mapper(self, index):
         return self.map_nodes[index]
@@ -171,6 +173,7 @@ class GeneticAlgorithm(object):
 
         Return
             int : fitness value. Though it use MST to compute fitness, it might added to a penalty value.
+            bool : indicates if it was added a penalization
 
         Notes
             1. Define o subgrafo induzido pela união dos vértices presentes no cromossomo
@@ -185,7 +188,7 @@ class GeneticAlgorithm(object):
         '''
         subgraph, vertices = self.decode_chromosome(chromosome)
 
-        penalty = lambda k : (k-1) * 100
+        penalize = lambda k : (k-1) * 100
         total_cost = 0
         nro_partition = 0
 
@@ -198,9 +201,10 @@ class GeneticAlgorithm(object):
             for w in tree.keys():
                 vertices.discard(w)
 
-        total_cost = total_cost + penalty(nro_partition)
+        penalization = penalize(nro_partition)
+        total_cost = total_cost + penalization
 
-        return total_cost
+        return total_cost, penalization > 0
 
     def generate_random_individual(self):
         '''Generates a single chromosome'''
@@ -241,8 +245,12 @@ class GeneticAlgorithm(object):
         best_fitness = - float("inf") # minus infinity
         bfn_chromosome = None # Best For Now
 
+        count_penalized = 0
+
         for chromosome in self.population:
-            cost = self.eval_chromosome(chromosome)
+            cost, penalized = self.eval_chromosome(chromosome)
+            if penalized: count_penalized += 1
+
             chromosome.cost = cost
             population_cost += cost
 
@@ -257,14 +265,19 @@ class GeneticAlgorithm(object):
         # 2. No artigo ele descrito como um procedimento do fitness.
         # Então resolvi ser consistente com o artigo original.
         # Mas esse procedimento poderia ser implementado no método de normalização
+        fitness_values = list()
         for chromosome in self.population:
             chromosome.fitness = max_cost - chromosome.cost
+            fitness_values.append(chromosome.fitness)
 
             if chromosome.fitness > best_fitness:
                 best_fitness = chromosome.fitness
                 bfn_chromosome = chromosome
 
-        self.update_best_chromossome(bfn_chromosome)
+        self.update_best_chromossome(bfn_chromosome,**kargs)
+        iteration = kargs.get("iteration", 0)
+        avg_fitness, std_fitness = statistics.mean(fitness_values), statistics.stdev(fitness_values)
+        self.logger.log("evaluation", iteration, count_penalized, avg_fitness, std_fitness)
 
         return population_cost
 
@@ -316,16 +329,21 @@ class GeneticAlgorithm(object):
     def elitism(self):
         pass
 
-    def update_best_chromossome(self, chromosome):
+    def update_best_chromossome(self, chromosome, **kargs):
         '''It traces the best solution found out so far'''
+        iteration = kargs.get("iteration", 0)
+
         if not self.best_chromosome:
             self.best_chromosome = chromosome
-            self.logger.log('best_fitness', chromosome.cost, chromosome.fitness)
+            self.logger.log('best_fitness', iteration, chromosome.cost, chromosome.fitness)
+            self.last_time_improvement = 0
+
         elif chromosome.cost < self.best_chromosome.cost:
             self.best_chromosome = chromosome
-            self.logger.log('best_fitness', chromosome.cost, chromosome.fitness)
+            self.logger.log('best_fitness', iteration, chromosome.cost, chromosome.fitness)
+            self.last_time_improvement = 0
 
-        self.logger.log('best_from_round', chromosome.cost, chromosome.fitness)
+        self.logger.log('best_from_round', iteration, chromosome.cost, chromosome.fitness)
 
     def updata_population(self, new_population):
         '''It's execute the population replace strategy'''
@@ -377,50 +395,81 @@ class GeneticAlgorithm(object):
 
 def run_trial(dataset: str, trial = 0, global_optimum = 0):
 
-    POPULATION_SIZE = 100
-    MAX_GENERATION = 10000
-
+    # Lendo a instância do problema
     reader = ReaderORLibrary()
     STPG = reader.parser(dataset)
 
-    datafolder = os.path.join("outputdata", "KAPSALIS_MST", STPG.name)
+    # Definindo o diretório que será destinado os dados
+    datafolder = os.path.join("outputdata", "teste", STPG.name)
     if not os.path.exists(datafolder):
         os.makedirs(datafolder) # or mkdir
 
+    ## Parâmetros  comuns a cada execução
     GA = GeneticAlgorithm(STPG)
+    GA.tx_crossover = 0.85
+    GA.tx_mutation =  0.2
+    POPULATION_SIZE = 100
+    MAX_GENERATION = 10000
+    MAX_LAST_IMPROVEMENT = 500
+    GLOBAL_OPTIMUN = global_optimum
+
+    ## Definindo a função com os critérios de parada
+
+    def check_stop_criterions(iteration=0):
+
+        if iteration >= MAX_GENERATION:
+            return (False, "max_generation_reached")
+        elif GA.last_time_improvement > MAX_LAST_IMPROVEMENT:
+            return (False, "stagnation")
+        elif GA.best_chromosome.cost == GLOBAL_OPTIMUN :
+            return (False, "global_optimum_reached")
+        else :
+            return (True, "non stop")
+
+    ## Configurando a coleta de informações
     GA.logger.prefix = f'trial_{trial}'
     GA.logger.mainfolder = datafolder
 
     GA.logger.add_header("simulation",
-            "trial",
+            "nro_trial",
             "instance_problem",
             "nro_nodes",
             "nro_edges",
             "nro_terminals",
             "tx_crossover",
             "tx_mutation",
+            "global_optimum",
             "best_cost",
             "best_fitness",
             "population_size",
-            "generation")
-    GA.logger.add_header("iteration", "trial", "iteration", "run_time")
+            "max_generation",
+            "iterations",
+            "run_time",
+            "max_last_improvement",
+            "why_stopped"
+            )
+
+    ## =============================================================
+    ## EXECUTANDO O ALGORITMO GENÉTICO
 
     GA.generate_population(POPULATION_SIZE)
     # GA.generate_population(POPULATION_SIZE, opt="MST")
-
-    iteration = 0
+    running = True
+    epoch = 0
     timestart = time.time()
-    while iteration < MAX_GENERATION:
-        GA.evaluate()
+    while running:
+        GA.evaluate(iteration=epoch)
         GA.selection()
         GA.recombine()
         GA.mutation()
-        iteration += 1
+        GA.last_time_improvement += 1
+        epoch += 1
+        running, why_stopped = check_stop_criterions(iteration=epoch)
     time_ends = time.time()
-    GA.logger.log("iteration", trial, iteration, (time_ends - timestart)) # bad smells
 
-    GA.evaluate()
+    GA.evaluate(iteration=epoch)
 
+    ## Record general simulation data
     GA.logger.log("simulation",
             trial,
             STPG.name,
@@ -429,11 +478,18 @@ def run_trial(dataset: str, trial = 0, global_optimum = 0):
             STPG.nro_terminals,
             GA.tx_crossover,
             GA.tx_mutation,
+            GLOBAL_OPTIMUN,
             GA.best_chromosome.cost,
             GA.best_chromosome.fitness,
             POPULATION_SIZE,
-            MAX_GENERATION)
+            MAX_GENERATION,
+            epoch,
+            (time_ends - timestart),
+            MAX_LAST_IMPROVEMENT,
+            why_stopped
+            )
 
+    ## Generates the reports
     GA.logger.report()
 
 
@@ -442,17 +498,38 @@ if __name__ == "__main__":
     import time
     from tqdm import tqdm
     from graph import ReaderORLibrary
-    from graph.reader import generate_file_names
 
-    NUMBER_OF_TRIALS = 5
+    NUMBER_OF_TRIALS = 30
+    DATASETS = [
+        ("steinb1.txt",   82), # 0
+        ("steinb2.txt",   83),
+        ("steinb3.txt",  138),
+        ("steinb4.txt",   59),
+        ("steinb5.txt",   61), # 4
+        ("steinb6.txt",  122),
+        ("steinb7.txt",  111),
+        ("steinb8.txt",  104),
+        ("steinb9.txt",  220), # 8
+        ("steinb10.txt",  86),
+        ("steinb11.txt",  88),
+        ("steinb12.txt", 174),
+        ("steinb13.txt", 165), # 12
+        ("steinb14.txt", 235),
+        ("steinb15.txt", 318), # 14
+        ("steinb16.txt", 127), # 15
+        ("steinb17.txt", 131), # 16
+        ("steinb18.txt", 218), # 17
+    ]
 
-    for filename in generate_file_names("b"):
+    # Prestar atenção ao tempo de execução. Isso pode demorar bastante.
+    for filename, global_optimum in DATASETS:
         dataset = os.path.join("datasets","ORLibrary", filename)
         if os.path.exists(dataset):
+            print(dataset, global_optimum)
             print("Executing trial for : ", filename, end="\r")
             for trial in range(1, NUMBER_OF_TRIALS + 1):
-                print("Executing trial for : ", filename," Trial nro: ", trial, end="\n")
-                run_trial(dataset, trial)
+                print("Executing trial for : ", filename," Trial nro: ", trial, end="\r")
+                run_trial(dataset, trial, global_optimum=global_optimum)
 
 
 
