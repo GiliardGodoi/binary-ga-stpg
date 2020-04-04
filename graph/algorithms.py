@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-from collections import deque, defaultdict
+from collections import defaultdict, deque
+
+from graph import Graph
+from graph.disjointsets import DisjointSets
 from graph.priorityqueue import PriorityQueue
 
 '''
@@ -66,7 +69,7 @@ def shortest_path_dijkstra(graph, source):
     return dist, prev
 
 
-def prim(graph, start):
+def prim(graph : Graph, start):
     ''' Prim's Algorithm: Compute the Minimum Spanning Tree for the graph.
 
     Parameters:
@@ -103,8 +106,34 @@ def prim(graph, start):
     return mtree, total_weight
 
 
-def kruskal(graph, start):
-    raise NotImplementedError("Ainda não implementado")
+def kruskal(graph : Graph):
+    '''Kruskal Algorithm to determine a Minimum Spanning Tree froma a Graph
+
+    Parameter
+        graph : Graph
+
+    Return
+        Graph
+    '''
+
+    DS = DisjointSets()
+    MST = Graph()
+
+    for v in graph.vertices:
+        DS.make_set(v)
+
+    edges = [ {"edge" : (v, u), "weight" : graph.weight(v, u)}  \
+                for v, u in graph.gen_undirect_edges()]
+
+    edges = sorted(edges, key=lambda item: item["weight"])
+
+    for item in edges:
+        v, u = item["edge"]
+        if DS.find(v) != DS.find(u):
+            MST.add_edge(v, u, weight=item["weight"])
+            DS.union(v,u)
+
+    return MST
 
 
 def bfs(graph, start=None):

@@ -6,6 +6,7 @@ Created on
 """
 from collections import defaultdict
 from graph import Graph
+from graph.util import has_cycle
 
 class Subset():
 
@@ -13,7 +14,7 @@ class Subset():
         self.parent = vertice
         self.rank = rank
 
-class DisjointSet():
+class DisjointSets():
 
     def __init__(self):
         self.subsets = defaultdict()
@@ -31,6 +32,9 @@ class DisjointSet():
         return self.subsets[item].parent
 
     def union(self, v, u):
+        self.__link(self.find(v), self.find(u))
+
+    def __link(self, v, u):
         if self.subsets[u].rank > self.subsets[v].rank:
             self.subsets[v].parent = self.subsets[u].parent
 
@@ -41,23 +45,6 @@ class DisjointSet():
             self.subsets[v].parent = u
             self.subsets[u].rank += 1
 
-def has_cycle(graph : Graph):
-
-    ss = DisjointSet()
-
-    for v in graph.vertices:
-        ss.make_set(v)
-
-    for v, u in graph.gen_undirect_edges():
-        v_rep = ss.find(v)
-        u_rep = ss.find(u)
-
-        if v_rep == u_rep:
-            return True
-
-        ss.union(v_rep, u_rep)
-
-    return False
 
 if __name__ == "__main__":
 

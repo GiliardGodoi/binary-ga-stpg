@@ -1,7 +1,7 @@
 from collections import deque
 
 from graph.graph import Graph
-
+from graph.disjointsets import DisjointSets, Subset
 
 def check_cycle_dfs(graph,start):
     '''Check if there is a cycle in a graph from a vertex, using DFS.
@@ -38,6 +38,24 @@ def check_cycle_dfs(graph,start):
 
     # return has_circle, visited
     return has_cycle, visited
+
+def has_cycle(graph : Graph):
+
+    ss = DisjointSets()
+
+    for v in graph.vertices:
+        ss.make_set(v)
+
+    for v, u in graph.gen_undirect_edges():
+        v_rep = ss.find(v)
+        u_rep = ss.find(u)
+
+        if v_rep == u_rep:
+            return True
+
+        ss.union(v_rep, u_rep)
+
+    return False
 
 
 def gg_total_weight(graph : Graph):
