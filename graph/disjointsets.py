@@ -18,12 +18,18 @@ class DisjointSets():
     def __init__(self):
         self.subsets = defaultdict()
 
+    def __contains__(self, item):
+        return item in self.subsets
+
+    def __len__(self):
+        return len(self.subsets)
+
     def make_set(self, item):
         self.subsets[item] = Subset(item)
 
     def find(self, item):
-        if not item in self.subsets:
-            raise AttributeError()
+        if item not in self.subsets:
+            raise TypeError(f"There is no subset for {item}")
 
         if self.subsets[item].parent != item :
             self.subsets[item].parent = self.find(self.subsets[item].parent)
@@ -31,9 +37,9 @@ class DisjointSets():
         return self.subsets[item].parent
 
     def union(self, v, u):
-        self.__link(self.find(v), self.find(u))
+        self.__link__(self.find(v), self.find(u))
 
-    def __link(self, v, u):
+    def __link__(self, v, u):
         if self.subsets[u].rank > self.subsets[v].rank:
             self.subsets[v].parent = self.subsets[u].parent
 
@@ -43,3 +49,13 @@ class DisjointSets():
         else :
             self.subsets[v].parent = u
             self.subsets[u].rank += 1
+
+    def get_disjoint_sets(self):
+
+        disjointsets = defaultdict(set)
+
+        for key in self.subsets.keys():
+            parent = self.find(key)
+            disjointsets[parent].add(key)
+
+        return disjointsets
