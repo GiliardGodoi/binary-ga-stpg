@@ -5,60 +5,35 @@ Created on Tue Mar 17 21:59:09 2020
 @author: Giliard Almeida de Godoi
 """
 import csv
-import os
 import json
+import os
 import random
 from collections import defaultdict, deque
 from operator import attrgetter
 
-from graph import Graph
+from graph import Graph, ReaderORLibrary
 from graph.steiner_heuristics import shortest_path, shortest_path_with_origin
 from graph.util import gg_rooted_tree, gg_total_weight
 
+from genetic.base import Operator
+from genetic.chromosome import BaseChromosome
 
-class Chromossome(object):
 
-    def __init__(self, subtree : Graph, start_node, fitness=0):
+class Chromossome(BaseChromosome):
+
+    def __init__(self, subtree : Graph, start_node, cost=0):
+        super().__init__(None)
         self.subtree = subtree
         self.start_node = start_node
 
-        self.__fitness = fitness
-        self.__score = fitness
-        self.was_normalized = False
 
-    @property
-    def fitness(self):
-        return self.__fitness
-
-    @fitness.setter
-    def fitness(self, value):
-        self.__fitness = value
-        self.__score = value
-        self.was_normalized = False
-
-    @property
-    def score(self):
-        return self.__score
-
-    @score.setter
-    def score(self, value):
-        self.__score = value
-        self.was_normalized = True
-
-    def __str__(self):
-        return f'fitness: {self.__fitness}'
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class PartitionCrossover(object):
+class PartitionCrossover(Operator):
 
     def __init__(self, graph_data : Graph):
         self.graph = graph_data
         self.counter = defaultdict()
 
-    def crossing(self, parent_1 : Chromossome, parent_2 : Chromossome):
+    def operation(self, parent_1 : Chromossome, parent_2 : Chromossome):
 
         subtree_1 = parent_1.subtree
         subtree_2 = parent_2.subtree
@@ -258,7 +233,7 @@ class PartitionCrossover(object):
         return GG_child
 
 
-class GeneticAlgorithm(object):
+class GeneticAlgorithm:
 
     def __init__(self, graph_problem, terminals):
 
@@ -330,7 +305,7 @@ class GeneticAlgorithm(object):
 
         while count < pool_size:
             p1, p2 = random.sample(self.population, k=2)
-            child = self.cross_operator.crossing(p1, p2)
+            child = self.cross_operator(p1, p2)
             offsprings.append(child)
 
             fitness = [p1.fitness, p2.fitness, child.fitness]
@@ -419,28 +394,67 @@ class GeneticAlgorithm(object):
 
 
 
-if __name__ == "__main__":
+def simulation():
+
+    dataset = os.path.join("datasets","ORLibrary","steinb13.txt")
+
+    reader = ReaderORLibrary()
+
+    STPG = reader.parser(dataset)
+    graph = Graph(vertices=STPG.nro_nodes, edges=STPG.graph)
+
+    GA = GeneticAlgorithm(graph, STPG.terminals)
+    GA.set_crossover_operator(PartitionCrossover(graph), probability = 1)
+
+    POPULATION_SIZE = 10
+    MAX_GENERATION = 100
+    iteration = 0
+
+    GA.initial_population(POPULATION_SIZE)
+    GA.evaluate()
+    GA.sort_population()
+
+    for c in GA.population:
+        print(c.fitness)
+
+    while iteration < MAX_GENERATION:
+        print("Iteration: ", (iteration + 1), end="\r")
+        GA.evaluate()
+        # GA.normalized_fitness()
+        GA.selection()
+        GA.recombine()
+        iteration += 1
+
+    GA.evaluate()
+    print("\n\n=============================\n\n")
+    print(GA.best_chromossome.fitness)
+
+
+    # OUTPUT_DATA = os.path.join("outputdata", "simulation")
+    # GA.report_log(folder=OUTPUT_DATA)
+
+def test():
     import random
     from os import path
     from graph import Reader
     from graph.steiner_heuristics import shortest_path_with_origin
 
-    arquivo = path.join("datasets","b13.stp")
+    filename = path.join("datasets", "ORLibrary", "steinb13.txt")
 
-    reader = Reader()
+    reader = ReaderORLibrary()
 
-    stp = reader.parser(arquivo)
+    STPG = reader.parser(filename)
 
-    graph = Graph(vertices=stp.nro_nodes, edges=stp.graph)
+    graph = Graph(vertices=STPG.nro_nodes, edges=STPG.graph)
 
     ## DETERMINAR DUAS SOLUÇÕES PARCIAIS PELAS HEURISTICAS
 
     # escolher aleatoriamente um vértice terminal
-    s1 = random.choice(stp.terminals)
-    subtree_1, cost1 = shortest_path_with_origin(graph, s1, stp.terminals) # 0 ate 16
+    s1 = random.choice(STPG.terminals)
+    subtree_1, cost1 = shortest_path_with_origin(graph, s1, STPG.terminals) # 0 ate 16
 
-    s2 = random.choice(stp.terminals)
-    subtree_2, cost2 = shortest_path_with_origin(graph, s2, stp.terminals)
+    s2 = random.choice(STPG.terminals)
+    subtree_2, cost2 = shortest_path_with_origin(graph, s2, STPG.terminals)
 
     parent_1 = Chromossome(subtree_1, s1, cost1)
     parent_2 = Chromossome(subtree_2, s2, cost2)
@@ -448,3 +462,7 @@ if __name__ == "__main__":
     PX = PartitionCrossover(graph)
 
     child = PX.crossing(parent_1, parent_2)
+
+if __name__ == "__main__":
+
+    simulation()

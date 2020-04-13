@@ -1,127 +1,21 @@
 # -*- coding: utf-8 -*-
+import os
 import random
+import statistics
 import time
 from collections import defaultdict
 from operator import attrgetter
 
-import statistics
+from genetic.chromosome import BaseChromosome as Chromosome
+from genetic.crossover import crossover_2points
+from genetic.mutation import mutation_flipbit
+from genetic.selection import roullete_selection
+from genetic.util.datalogger import BaseLogger, SimulationLogger
 
-from datalogger import SimulationLogger, Logger
 from graph import Graph, ReaderORLibrary, SteinerTreeProblem
 from graph.algorithms import prim
 
-## SELECTIONS METHODS
-
-def tournament_selection(population):
-    selected = list()
-    pool_size = len(population)
-    count = 0
-
-    while count < pool_size:
-        c1, c2 = random.sample(population, k=2)
-        if c1.fitness < c2.fitness:
-            selected.append(c1)
-        else:
-            selected.append(c2)
-
-        count += 1
-
-    return selected
-
-
-def roullete_selection(population, pool_size):
-    # pool_size = len(population)
-    fitnesses = [c.fitness for c in population if c.normalized]
-
-    # Return a k sized list of population elements chosen with replacement
-    selected = random.choices(population, weights=fitnesses, k=pool_size)
-
-    return selected
-
-##  CROSSOVER METHODS FOR BINARY CHROMOSOMES
-
-def crossover_2points(A_parent, B_parent):
-    length = len(A_parent)
-    points = random.sample(range(0, length), k=2)
-    points.sort()
-    p1, p2 = points
-
-    crossing = lambda genex, geney : genex[:p1] + geney[p1:p2] + genex[p2:]
-
-    offspring_A = Chromosome(crossing(A_parent.genes, B_parent.genes))
-    offspring_B = Chromosome(crossing(B_parent.genes, A_parent.genes))
-
-    return offspring_A, offspring_B
-
-
-def crossover_1points(A_parent, B_parent):
-    length = len(A_parent)
-    point = random.choice(range(0,length))
-
-    crossing = lambda genex, geney : genex[:point] + geney[point:]
-
-    offspring_A = Chromosome(crossing(A_parent.genes, B_parent.genes))
-    offspring_B = Chromosome(crossing(B_parent.genes, A_parent.genes))
-
-    return offspring_A, offspring_B
-
-## MUTATION METHODS
-
-def mutation_flipbit(chromosome):
-    '''Flip exactly one bit from the chromosome genes'''
-
-    flipbit = lambda x : '1' if x == '0' else '0'
-
-    index = random.randrange(0, len(chromosome))
-    genes = chromosome.genes
-    genes = genes[:index] + flipbit(genes[index]) + genes[(index + 1):]
-
-    return Chromosome(genes)
-
-
-## NORMALIZATION METHODS
-
-
-## CHROMOSOME CLASS
-
-class Chromosome(object):
-
-    def __init__(self, genes):
-        self.genes = genes
-        self.__cost = 0
-        self.__fitness = 0
-        self.normalized = False
-
-    @property
-    def cost(self):
-        return self.__cost
-
-    @cost.setter
-    def cost(self, value):
-        self.__cost = value
-        self.__fitness = value
-        self.normalized = False
-
-    @property
-    def fitness(self):
-        return self.__fitness
-
-    @fitness.setter
-    def fitness(self, value):
-        self.__fitness = value
-        self.normalized = True
-
-    def __len__(self):
-        return len(self.genes)
-
-    def __str__(self):
-        return str(self.genes)
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class GeneticAlgorithm(object):
+class GeneticAlgorithm:
     '''
     Basic implementation of mainly fuctions for a GA
     with binary chromosome representation.
@@ -137,11 +31,11 @@ class GeneticAlgorithm(object):
         self.tx_mutation = 0.2
         self.tx_crossover = 0.85
 
-        self.best_chromosome = None
-        self.last_time_improvement = 0
-
         # Quantidade de vértices não obrigatórios.
         self.chromosome_length = STPG.nro_nodes - STPG.nro_terminals
+
+        self.best_chromosome = None
+        self.last_time_improvement = 0
 
         ## MAPPING NODES DICTIONARY
         # O cromossomo representa unicamente os vértices não-obrigatórios de um grafo.
@@ -150,7 +44,7 @@ class GeneticAlgorithm(object):
         # O dicionário possui a forma:
         #       { <indice posição do vetor> : <vértice representado> }
         self.map_nodes = dict()
-        index = 0
+        index = 0 # o array (list) de genes começa com indice igual a 0
         for node in range(1, (STPG.nro_nodes+1)):
             if not node in self.terminals:
                 self.map_nodes[index] = node
@@ -186,20 +80,19 @@ class GeneticAlgorithm(object):
 
             4. Transforma em um problema de maximização subtraindo de cada fitness o maior valor de fitness observado na população.
         '''
-        subgraph, vertices = self.decode_chromosome(chromosome)
+        subgraph, vertices = self.subgraph_from_chromosome(chromosome)
 
-        penalize = lambda k : (k-1) * 100
+        penalize = lambda k : (k - 1) * 100
         total_cost = 0
         nro_partition = 0
 
         while vertices:
             v = vertices.pop()
-            tree, cost = prim(subgraph, v)
+            mst, cost = prim(subgraph, v)
             total_cost += cost
             nro_partition += 1
 
-            for w in tree.keys():
-                vertices.discard(w)
+            vertices = vertices.difference(mst.keys())
 
         penalization = penalize(nro_partition)
         total_cost = total_cost + penalization
@@ -214,7 +107,7 @@ class GeneticAlgorithm(object):
 
         return Chromosome(genes)
 
-    def generate_population(self, population_size, opt=None):
+    def generate_population(self, population_size, **kargs):
 
         assert population_size > 0, "Population must have more than 0 individuals"
         assert (population_size % 2) == 0, "Population size must be a even number"
@@ -223,6 +116,8 @@ class GeneticAlgorithm(object):
 
         population = list()
         count = 0
+
+        opt = kargs.get("opt", None)
 
         if opt and opt == "MST" :
             genes = ''.join(['1'] * self.chromosome_length)
@@ -265,19 +160,21 @@ class GeneticAlgorithm(object):
         # 2. No artigo ele descrito como um procedimento do fitness.
         # Então resolvi ser consistente com o artigo original.
         # Mas esse procedimento poderia ser implementado no método de normalização
-        fitness_values = list()
+        population_fitness = list()
         for chromosome in self.population:
             chromosome.fitness = max_cost - chromosome.cost
-            fitness_values.append(chromosome.fitness)
+            population_fitness.append(chromosome.fitness)
 
             if chromosome.fitness > best_fitness:
                 best_fitness = chromosome.fitness
                 bfn_chromosome = chromosome
 
         self.update_best_chromossome(bfn_chromosome,**kargs)
-        iteration = kargs.get("iteration", 0)
-        avg_fitness, std_fitness = statistics.mean(fitness_values), statistics.stdev(fitness_values)
-        self.logger.log("evaluation", iteration, count_penalized, avg_fitness, std_fitness)
+        self.logger.log("evaluation",
+            kargs.get("iteration", 0),
+            count_penalized,
+            statistics.mean(population_fitness),
+            statistics.stdev(population_fitness))
 
         return population_cost
 
@@ -329,7 +226,7 @@ class GeneticAlgorithm(object):
     def elitism(self):
         pass
 
-    def update_best_chromossome(self, chromosome, **kargs):
+    def update_best_chromossome(self, chromosome : Chromosome, **kargs):
         '''It traces the best solution found out so far'''
         iteration = kargs.get("iteration", 0)
 
@@ -356,7 +253,7 @@ class GeneticAlgorithm(object):
         '''Sort the population by fitness attribute'''
         self.population.sort(key=attrgetter("fitness"))
 
-    def decode_chromosome(self, chromosome : Chromosome):
+    def subgraph_from_chromosome(self, chromosome : Chromosome):
         '''Define the subgraph from a particular chromosome representation.
 
         Parameter:
@@ -369,6 +266,7 @@ class GeneticAlgorithm(object):
         '''
         vertices = set(self.terminals)
         subgraph = Graph()
+        dones = set()
 
         for index, gene in enumerate(chromosome.genes):
             if gene == '1':
@@ -378,22 +276,78 @@ class GeneticAlgorithm(object):
         for v in vertices:
             subgraph.add_node(v)
             for u in self.graph.adjacent_to(v):
-                if u in vertices :
+                if (u in vertices) and (u not in dones):
                     w = self.graph.weight(v, u)
                     subgraph.add_edge(v, u, weight=w)
+            dones.add(v)
 
         return subgraph, vertices
 
-    def encode_chromosome(self, subgraph: Graph):
+    def chromosome_from_subgraph(self, subgraph: Graph):
         '''Enconde a subgraph using the chromosome representation
 
         Notes:
         It's dont check if subgraph is actually a subgraph from self.graph
         '''
-        pass
+        genes = list()
+        all_vertices = [0] * self.nro_vertices
+        terminals = set(self.terminals)
+
+        for v in subgraph.vertices:
+            all_vertices[v-1] = 1
+
+        for index, value in enumerate(all_vertices):
+            node = index + 1
+            if node not in terminals:
+                genes.append(str(value))
+
+        return ''.join(genes)
 
 
-def run_trial(dataset: str, trial = 0, global_optimum = 0):
+def test(dataset):
+    from tqdm import tqdm
+    from graph.util import has_cycle
+
+    reader = ReaderORLibrary()
+    STPG = reader.parser(dataset)
+
+    GA = GeneticAlgorithm(STPG)
+    GA.logger = BaseLogger()
+
+    GA.generate_population(100)
+
+    time_starts = time.time()
+    for iteration in tqdm(range(0,50)):
+        # print("Iteration: ", (iteration + 1), end="\r")
+        GA.evaluate()
+        GA.selection()
+        GA.recombine() # problema identificado aqui
+        GA.mutation()
+
+    time_ends = time.time()
+
+    GA.evaluate()
+
+    # GA.logger.report()
+
+
+    print("Total run time: ", (time_ends - time_starts))
+
+    subgraph, _ = GA.subgraph_from_chromosome(GA.best_chromosome)
+
+    dtree, cost = prim(subgraph, STPG.terminals[0])
+    print("Final prim cost: ", cost)
+    print("Final fitness: ", GA.eval_chromosome(GA.best_chromosome))
+
+    test_genes = GA.chromosome_from_subgraph(subgraph)
+
+    print(test_genes)
+    print(GA.best_chromosome.genes)
+    print(all( z == w for z, w in zip(test_genes, GA.best_chromosome.genes)))
+
+
+def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
+    '''Run a simulation trial'''
 
     # Lendo a instância do problema
     reader = ReaderORLibrary()
@@ -427,7 +381,7 @@ def run_trial(dataset: str, trial = 0, global_optimum = 0):
             return (True, "non stop")
 
     ## Configurando a coleta de informações
-    GA.logger.prefix = f'trial_{trial}'
+    GA.logger.prefix = f'trial_{nro_trial}'
     GA.logger.mainfolder = datafolder
 
     GA.logger.add_header("simulation",
@@ -471,7 +425,7 @@ def run_trial(dataset: str, trial = 0, global_optimum = 0):
 
     ## Record general simulation data
     GA.logger.log("simulation",
-            trial,
+            nro_trial,
             STPG.name,
             STPG.nro_nodes,
             STPG.nro_edges,
@@ -492,8 +446,7 @@ def run_trial(dataset: str, trial = 0, global_optimum = 0):
     ## Generates the reports
     GA.logger.report()
 
-
-if __name__ == "__main__":
+def main():
     import os
     import time
     from tqdm import tqdm
@@ -527,37 +480,12 @@ if __name__ == "__main__":
         if os.path.exists(dataset):
             print(dataset, global_optimum)
             print("Executing trial for : ", filename, end="\r")
-            for trial in range(1, NUMBER_OF_TRIALS + 1):
-                print("Executing trial for : ", filename," Trial nro: ", trial, end="\r")
-                run_trial(dataset, trial, global_optimum=global_optimum)
+            for nro in range(1, NUMBER_OF_TRIALS + 1):
+                print("Executing trial for : ", filename," Trial nro: ", nro, end="\r")
+                simulation(dataset, nro_trial=nro, global_optimum=global_optimum)
 
 
-
-    # reader = ReaderORLibrary()
-    # STPG = reader.parser(dataset)
-
-    # GA = GeneticAlgorithm(STPG)
-
-    # GA.generate_population(10)
-
-    # time_starts = time.time()
-    # for iteration in tqdm(range(0,10000)):
-    #     # print("Iteration: ", (iteration + 1), end="\r")
-    #     GA.evaluate()
-    #     GA.selection()
-    #     GA.recombine() # problema identificado aqui
-    #     GA.mutation()
-
-    # time_ends = time.time()
-
-    # GA.evaluate()
-
-    # GA.logger.report()
-
-
-    # print("Total run time: ", (time_ends - time_starts))
-    # subgraph, _ = GA.decode_chromosome(GA.best_chromosome)
-
-    # # has_cycle, _ = check_cycle_dfs(subtree, STPG.terminals[0])
-    # dtree, cost = prim(subgraph, STPG.terminals[0])
-    # fitness = GA.eval_chromosome(GA.best_chromosome)
+if __name__ == "__main__":
+    import os
+    test(os.path.join("datasets","ORLibrary","steinb1.txt"))
+    # main()
