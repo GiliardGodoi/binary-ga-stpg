@@ -1,4 +1,11 @@
-class BaseChromosome(object):
+# -*- coding: utf-8 -*-
+'''
+    Fornece algumas representações básicas para os cromossomos
+'''
+
+import reprlib
+
+class BinaryChromosome(object):
     '''Class provides a basic chromosome representation'''
 
     def __init__(self, genes):
@@ -34,17 +41,13 @@ class BaseChromosome(object):
         self.__fitness = value
         self.normalized = True
 
-    def __len__(self):
-        return 1
-
     def __str__(self):
         return str(self.genes)
 
     def __repr__(self):
-        return self.__class__.__name__
+        return f"{self.__class__.__name__}: {reprlib.repr(self.genes)}"
 
-
-class TreeBasedChromosome(BaseChromosome):
+class TreeBasedChromosome(BinaryChromosome):
 
     def __init__(self, genes):
         super().__init__(genes)
@@ -56,3 +59,6 @@ class TreeBasedChromosome(BaseChromosome):
     @graph.setter
     def graph(self, newgraph):
         self.genes = newgraph
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}"

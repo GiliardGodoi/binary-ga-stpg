@@ -24,7 +24,10 @@ class DisjointSets():
     def __len__(self):
         return len(self.subsets)
 
-    def make_set(self, item):
+    def make_set(self, item, ignore_previous=False):
+        if item in self.subsets and not ignore_previous:
+            raise ValueError(f"Key <{item!r}> already exist")
+
         self.subsets[item] = Subset(item)
 
     def find(self, item):

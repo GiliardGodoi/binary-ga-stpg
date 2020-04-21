@@ -6,36 +6,30 @@ import time
 from collections import defaultdict
 from operator import attrgetter
 
-from genetic.chromosome import BaseChromosome as Chromosome
+from genetic.base import BaseGA
+from genetic.chromosome import BinaryChromosome
 from genetic.crossover import crossover_2points
+from genetic.datalogger import BaseLogger, DataLogger
 from genetic.mutation import mutation_flipbit
 from genetic.selection import roullete_selection
-from genetic.util.datalogger import BaseLogger, SimulationLogger
-
 from graph import Graph, ReaderORLibrary, SteinerTreeProblem
 from graph.algorithms import prim
+from graph.steiner import prunning_mst
 
-class GeneticAlgorithm:
-    '''
-    Basic implementation of mainly fuctions for a GA
-    with binary chromosome representation.
-    '''
+
+class GeneticAlgorithm(BaseGA):
+    '''A binary GA'''
     def __init__(self, STPG : SteinerTreeProblem):
+        super().__init__()
         self.graph = Graph(edges=STPG.graph)
         self.terminals = set(STPG.terminals)
         self.nro_vertices = STPG.nro_nodes
 
-        self.population = list()
-        self.popultaion_size = 0
-
-        self.tx_mutation = 0.2
         self.tx_crossover = 0.85
+        self.tx_mutation = 0.2
 
         # Quantidade de vértices não obrigatórios.
         self.chromosome_length = STPG.nro_nodes - STPG.nro_terminals
-
-        self.best_chromosome = None
-        self.last_time_improvement = 0
 
         ## MAPPING NODES DICTIONARY
         # O cromossomo representa unicamente os vértices não-obrigatórios de um grafo.
@@ -50,16 +44,47 @@ class GeneticAlgorithm:
                 self.map_nodes[index] = node
                 index += 1
 
-        self.logger = SimulationLogger()
-        # self.logger.add_header('crossover','A_parent', 'B_parent')
-        self.logger.add_header('best_fitness','iteration', 'cost', 'fitness')
-        self.logger.add_header('best_from_round', 'iteration', 'cost', 'fitness')
-        self.logger.add_header("evaluation","iteration" , "penalization", "average", "std_deviation")
+        self.logger = DataLogger(outputfolder="teste")
 
     def __mapper(self, index):
         return self.map_nodes[index]
 
-    def eval_chromosome(self, chromosome : Chromosome):
+    def generate_new_individual(self, **kwargs):
+        '''Generates a single chromosome'''
+        length = self.chromosome_length
+
+        genes = ''.join(random.choices(['0', '1'], k=length))
+
+        return BinaryChromosome(genes)
+
+    def generate_population(self, **kwargs):
+
+        super().generate_population(**kwargs)
+
+        opt = kwargs.get("opt", None)
+
+        if opt and opt == "MST" :
+            # retira um elemento qualquer da populacao
+            self.population.pop() # tamanho - 1
+            # Acrescenta um individuo onde todos os vértices participam
+            genes = ''.join(['1'] * self.chromosome_length)
+            self.population.append(BinaryChromosome(genes))
+            print("MST seeded...")
+
+        elif opt and opt == "TRIM" :
+            # retira um elemento qualquer da populacao
+            self.population.pop() # tamanho - 1
+            mstsubgraph = prunning_mst(self.graph, # grafo instância do problema
+             random.choice(list(self.terminals)),  # escolhe um vértice terminal aleatório
+             self.terminals)                       # vértices terminais
+
+            genes = self.chromosome_from_subgraph(mstsubgraph)
+            self.population.append(BinaryChromosome(genes))
+            print("TRIM seeded")
+
+        assert len(self.population) == self.population_size, "population doesn't have the same size as before"
+
+    def eval_chromosome(self, chromosome : BinaryChromosome):
         ''' Evaluete chromosome's fitness.
 
         Parameter
@@ -99,40 +124,7 @@ class GeneticAlgorithm:
 
         return total_cost, penalization > 0
 
-    def generate_random_individual(self):
-        '''Generates a single chromosome'''
-        length = self.chromosome_length
-
-        genes = ''.join(random.choices(['0', '1'], k=length))
-
-        return Chromosome(genes)
-
-    def generate_population(self, population_size, **kargs):
-
-        assert population_size > 0, "Population must have more than 0 individuals"
-        assert (population_size % 2) == 0, "Population size must be a even number"
-
-        self.population_size = population_size
-
-        population = list()
-        count = 0
-
-        opt = kargs.get("opt", None)
-
-        if opt and opt == "MST" :
-            genes = ''.join(['1'] * self.chromosome_length)
-            population.append(Chromosome(genes))
-            count += 1
-            print("MST seeded...")
-        elif opt and opt == "TRIM" :
-            print("TRIM seeded")
-
-        for _ in range(count, population_size):
-            population.append(self.generate_random_individual())
-
-        self.population = population
-
-    def evaluate(self, **kargs):
+    def evaluate(self, **kwargs):
 
         population_cost = 0
         max_cost = 0
@@ -169,91 +161,19 @@ class GeneticAlgorithm:
                 best_fitness = chromosome.fitness
                 bfn_chromosome = chromosome
 
-        self.update_best_chromossome(bfn_chromosome,**kargs)
+        self.update_best_chromosome(bfn_chromosome,**kwargs)
         self.logger.log("evaluation",
-            kargs.get("iteration", 0),
+            kwargs.get("iteration", 0),
             count_penalized,
             statistics.mean(population_fitness),
             statistics.stdev(population_fitness))
 
         return population_cost
 
-    def selection(self):
-        self.population = roullete_selection(self.population, self.population_size)
-
-    def recombine(self):
-
-        newpopulation = list()
-        population_size = self.population_size
-        count = 0
-
-        while count < population_size:
-            parent_a, parent_b = random.sample(self.population, k=2)
-            child_a, child_b = crossover_2points(parent_a, parent_b)
-
-            newpopulation.append(child_a)
-            newpopulation.append(child_b)
-            count += 2
-        ## Após a aplicação da operação de cruzamento o chromossomo não tem o seu fitness
-        ## avaliado imediatamente. Algumas estratégias podem ser utilizadas...
-
-        # Posso inserir todos os novos individuos em um pool e na operação de seleção
-        # na função <selection> selecionar apenas o número original de individuos.
-        # Assim se a minha população inicial é de 100 individuos, a operação de recombinação
-        # irá gerar o dobro de individuos (200) e na fase de seleção eu seleciono apenas 100, de
-        # de acordo com a estratégia de seleção utilizada, no caso seleção por roleta.
-
-        # Ou podemos em <update_population> selecionar os N primeiros melhores chromossomos.
-        # onde N é o número de individuos da nossa população.
-        # mas essa estratégia requer um passo de avaliação extra dos cromossomos.
-
-        # ou eu posso simplesmente adicionar 2 ao contador <count> como está sendo
-
-        self.updata_population(newpopulation)
-
-    def mutation(self):
-        population_size = self.population_size
-        count = 0
-
-        while count < population_size:
-            if random.random() < self.tx_mutation:
-                self.population[count] = mutation_flipbit(self.population[count])
-            count += 1
-
-    def normalize(self):
+    def normalize(self,**kwargs):
         pass
 
-    def elitism(self):
-        pass
-
-    def update_best_chromossome(self, chromosome : Chromosome, **kargs):
-        '''It traces the best solution found out so far'''
-        iteration = kargs.get("iteration", 0)
-
-        if not self.best_chromosome:
-            self.best_chromosome = chromosome
-            self.logger.log('best_fitness', iteration, chromosome.cost, chromosome.fitness)
-            self.last_time_improvement = 0
-
-        elif chromosome.cost < self.best_chromosome.cost:
-            self.best_chromosome = chromosome
-            self.logger.log('best_fitness', iteration, chromosome.cost, chromosome.fitness)
-            self.last_time_improvement = 0
-
-        self.logger.log('best_from_round', iteration, chromosome.cost, chromosome.fitness)
-
-    def updata_population(self, new_population):
-        '''It's execute the population replace strategy'''
-
-        assert len(self.population) == len(new_population), "It is not the same size"
-        ## Replace all
-        self.population = new_population
-
-    def sort_population(self):
-        '''Sort the population by fitness attribute'''
-        self.population.sort(key=attrgetter("fitness"))
-
-    def subgraph_from_chromosome(self, chromosome : Chromosome):
+    def subgraph_from_chromosome(self, chromosome : BinaryChromosome):
         '''Define the subgraph from a particular chromosome representation.
 
         Parameter:
@@ -290,16 +210,16 @@ class GeneticAlgorithm:
         It's dont check if subgraph is actually a subgraph from self.graph
         '''
         genes = list()
-        all_vertices = [0] * self.nro_vertices
+        all_vertices = ['0'] * self.nro_vertices
         terminals = set(self.terminals)
 
         for v in subgraph.vertices:
-            all_vertices[v-1] = 1
+            all_vertices[v-1] = '1'
 
         for index, value in enumerate(all_vertices):
             node = index + 1
             if node not in terminals:
-                genes.append(str(value))
+                genes.append(value)
 
         return ''.join(genes)
 
@@ -314,7 +234,7 @@ def test(dataset):
     GA = GeneticAlgorithm(STPG)
     GA.logger = BaseLogger()
 
-    GA.generate_population(100)
+    GA.generate_population(population_size=100)
 
     time_starts = time.time()
     for iteration in tqdm(range(0,50)):
@@ -328,7 +248,7 @@ def test(dataset):
 
     GA.evaluate()
 
-    # GA.logger.report()
+    GA.logger.report()
 
 
     print("Total run time: ", (time_ends - time_starts))
@@ -384,7 +304,7 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     GA.logger.prefix = f'trial_{nro_trial}'
     GA.logger.mainfolder = datafolder
 
-    GA.logger.add_header("simulation",
+    GA.logger.register("simulation", "csv",
             "nro_trial",
             "instance_problem",
             "nro_nodes",
@@ -406,7 +326,7 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     ## =============================================================
     ## EXECUTANDO O ALGORITMO GENÉTICO
 
-    GA.generate_population(POPULATION_SIZE)
+    GA.generate_population(population_size=POPULATION_SIZE)
     # GA.generate_population(POPULATION_SIZE, opt="MST")
     running = True
     epoch = 0
@@ -445,6 +365,7 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
 
     ## Generates the reports
     GA.logger.report()
+
 
 def main():
     import os

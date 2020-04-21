@@ -7,33 +7,19 @@ Created on Sun Mar 15 16:26:16 2020
 import os
 import random
 import statistics
+import time
 from collections import deque
 from operator import attrgetter
 
-from genetic.base import Operator
-from genetic.chromosome import BaseChromosome
+from genetic.base import BaseGA, Operator
+from genetic.chromosome import TreeBasedChromosome
+from genetic.datalogger import BaseLogger, DataLogger
 from genetic.selection import roullete_selection
-from genetic.util.datalogger import BaseLogger, SimulationLogger
 from graph import Graph, ReaderORLibrary, SteinerTreeProblem
 from graph.algorithms import kruskal
 from graph.disjointsets import DisjointSets
-from graph.steiner_heuristics import shortest_path_with_origin
+from graph.steiner import shortest_path_with_origin
 from graph.util import gg_total_weight, has_cycle
-import time
-
-
-class Chromosome(BaseChromosome):
-
-    def __init__(self, genes):
-        super().__init__(genes)
-
-    @property
-    def graph(self):
-        return self.genes
-
-    @graph.setter
-    def graph(self, newgraph):
-        self.genes = newgraph
 
 
 class SimplePartitionCrossover (Operator):
@@ -53,7 +39,7 @@ class SimplePartitionCrossover (Operator):
     def __init__(self, graphinstance : Graph):
         self.graph = graphinstance
 
-    def operation(self, PARENT_A : Chromosome, PARENT_B : Chromosome):
+    def operation(self, PARENT_A : TreeBasedChromosome, PARENT_B : TreeBasedChromosome):
         '''Implementa a operação de crossover'''
 
         SUBTREE_A = PARENT_A.graph
@@ -100,7 +86,7 @@ class SimplePartitionCrossover (Operator):
             for v, u in partition["edges"]:
                 graph_common.add_edge(v, u, weight=self.graph.weight(v, u))
 
-        return Chromosome(graph_common)
+        return TreeBasedChromosome(graph_common)
 
     def __dfs__(self, uncommon_graph : Graph, Atree : Graph, Btree : Graph, start):
 
@@ -131,46 +117,39 @@ class SimplePartitionCrossover (Operator):
         return partition, vertices_done
 
 
-class GeneticAlgorithm:
-    '''Define the basic class to define a GA'''
+class GeneticAlgorithm(BaseGA):
 
     def __init__(self, STPG : SteinerTreeProblem):
+        super().__init__()
         self.STPG = STPG
         self.graph = Graph(edges=STPG.graph)
 
         self.crossover_operator = SimplePartitionCrossover(self.graph)
         self.selection_operator = roullete_selection
-        self.mutation_operator = lambda item : item ## Null operator
-
-        self.population = list()
-        self.population_size = 0
-        self.selected_population = list()
 
         self.tx_crossover = 0.9
         self.tx_mutation = 0.2
 
-        self.tx_newvertice = 0.8
+        self.logger = DataLogger()
 
-        self.chromosome_legth = 0
+    def generate_new_individual(self, **kwargs):
 
-        self.best_chromosome = None
-        self.last_time_improvement = 0
+        edges = kwargs.get("edges", None)
+        if not edges:
+            raise AttributeError("Attribute not found")
 
-        self.logger = SimulationLogger()
-        self.logger.add_header('best_fitness','iteration', 'cost', 'fitness')
-        self.logger.add_header('best_from_round', 'iteration', 'cost', 'fitness')
-        self.logger.add_header("evaluation","iteration" , "penalization", "average", "std_deviation")
+        if not isinstance(edges, list):
+            raise TypeError("all_edges")
 
-    def generate_new_individual(self, *args):
+        all_edges = edges[:] # make a copy from itself
 
-        all_edges = args[0]
         random.shuffle(all_edges)
         terminals = set(self.STPG.terminals)
 
         DS = DisjointSets()
         subgraph = Graph()
 
-        while all_edges:
+        while all_edges and terminals:
             v, u, w = all_edges.pop()
 
             if v not in DS :
@@ -184,7 +163,7 @@ class GeneticAlgorithm:
                 terminals.discard(v)
                 terminals.discard(u)
 
-        return Chromosome(subgraph)
+        return TreeBasedChromosome(subgraph)
 
         # GRAPH = self.graph
         # terminals = set(self.STPG.terminals)
@@ -209,23 +188,14 @@ class GeneticAlgorithm:
         #     while tt:
         #         v = tt.pop()
         #         subgraph.add_node(v)
-        # return Chromosome(subgraph)
+        # return TreeBasedChromosome(subgraph)
 
-    def generate_population(self, population_size, **kargs):
+    def generate_population(self,**kwargs):
 
-        self.population_size = population_size
-        counter = 0
-        newpopulation = list()
+        edges = [(v, u, self.graph.weight(v,u)) for v, u in self.graph.gen_undirect_edges()]
+        super().generate_population(edges=edges, **kwargs)
 
-        all_edges = [(v, u, self.graph.weight(v,u)) for v, u in self.graph.gen_undirect_edges()]
-
-        while counter < self.population_size:
-            newpopulation.append(self.generate_new_individual(all_edges[:]))
-            counter += 1
-
-        self.update_population(newpopulation, **kargs)
-
-    def eval_chromosome(self, chromosome : Chromosome):
+    def eval_chromosome(self, chromosome : TreeBasedChromosome):
 
         if hasattr(chromosome, 'graph') and isinstance(chromosome.graph, Graph):
             graph = chromosome.graph
@@ -254,98 +224,10 @@ class GeneticAlgorithm:
                 qtd_partitions += 1
                 DFS_visit(s)
 
-        return total['cost'] + penality(qtd_partitions)
-
-    def evaluate(self, **kargs):
-        '''Evaluates the entire population.
-
-        Returns:
-            int or float : total population cost
-            int or float : maximun cost from the current generation
-            float : average cost from the current generation
-        '''
-        evaluated_costs = list()
-
-        for chromosome in self.population:
-            cost = self.eval_chromosome(chromosome)
-            chromosome.cost = cost
-            evaluated_costs.append(cost)
-
-        return sum(evaluated_costs), max(evaluated_costs), statistics.mean(evaluated_costs)
-
-    def selection(self):
-        self.selected_population = self.selection_operator(self.population, self.population_size)
-
-    def recombine(self):
-
-        newpopulation = list()
-        population_size = self.population_size
-        count = 0
-
-        while count < population_size:
-            parent_a, parent_b = random.sample(self.selected_population, k=2)
-            ## Como a operação de seleção é executada.
-            child = self.crossover_operator(parent_a, parent_b)
-
-            if isinstance(child, (list, tuple)) :
-                newpopulation.extend(child)
-                count += len(child)
-            else :
-                newpopulation.append(child)
-                count += 1
-
-        self.update_population(newpopulation)
+        return total['cost'] + penality(qtd_partitions), qtd_partitions > 1
 
     def mutation(self):
-        population_size = self.population_size
-        count = 0
-        while count < population_size:
-            if random.random() < self.tx_mutation:
-                self.population[count] = self.mutation_operator(self.population[count])
-            count += 1
-
-    def normalize(self, **kargs):
-
-        best_fitness_value = -float("inf")
-        best_chromosome = None
-
-        max_cost = max(chromosome.cost for chromosome in self.population)
-        population_fitness = list()
-
-        for chromosome in self.population:
-            fitness = max_cost - chromosome.cost
-            chromosome.fitness = fitness
-            population_fitness.append(fitness)
-
-            if chromosome.fitness > best_fitness_value:
-                best_fitness_value = chromosome.fitness
-                best_chromosome = chromosome
-
-        self.logger.log("evaluation",
-            kargs.get("iteration", 0),
-            None,
-            statistics.mean(population_fitness),
-            statistics.stdev(population_fitness))
-
-        self.update_best_chromosome(best_chromosome, **kargs)
-
-    def update_population(self, newpopulation):
-        # replace all
-        self.population = newpopulation
-
-    def update_best_chromosome(self, chromosome : Chromosome, **kargs):
-        if self.best_chromosome is None:
-            self.best_chromosome = chromosome
-            self.logger.log('best_fitness', kargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
-        elif self.best_chromosome.cost > chromosome.cost:
-            self.best_chromosome = chromosome
-            self.logger.log('best_fitness', kargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
-
-        self.logger.log('best_from_round', kargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
-
-    def sort_population(self):
-        '''Sort the population by fitness attribute'''
-        self.population.sort(key=attrgetter("fitness"))
+        pass
 
 
 ## =========================================================================== ##
@@ -373,7 +255,7 @@ def test_1():
 
         SPX = SimplePartitionCrossover(graphinstance=graph)
 
-        offspring = SPX.operation(Chromosome(SUBTREE_A), Chromosome(SUBTREE_B))
+        offspring = SPX.operation(TreeBasedChromosome(SUBTREE_A), TreeBasedChromosome(SUBTREE_B))
 
         offspring_cost = gg_total_weight(offspring.graph)
 
@@ -399,7 +281,7 @@ def test_2():
     GA = GeneticAlgorithm(STPG)
     GA.logger = BaseLogger()
 
-    GA.generate_population(10)
+    GA.generate_population(population_size=10)
     GA.evaluate()
     GA.normalize()
     GA.sort_population()
@@ -432,7 +314,7 @@ def test_3():
     GA = GeneticAlgorithm(STPG)
     GA.logger = BaseLogger()
 
-    GA.generate_population(100)
+    GA.generate_population(population_size=10)
     MAX_GENERATION = 100
     counter = 0
 
@@ -491,7 +373,7 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     GA.logger.prefix = f'trial_{nro_trial}'
     GA.logger.mainfolder = datafolder
 
-    GA.logger.add_header("simulation",
+    GA.logger.register("simulation", "csv",
             "nro_trial",
             "instance_problem",
             "nro_nodes",
@@ -513,7 +395,7 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     ## =============================================================
     ## EXECUTANDO O ALGORITMO GENÉTICO
 
-    GA.generate_population(POPULATION_SIZE)
+    GA.generate_population(population_size=POPULATION_SIZE)
     # GA.generate_population(POPULATION_SIZE, opt="MST")
     running = True
     epoch = 0
@@ -559,7 +441,7 @@ def main():
     import time
     from graph import ReaderORLibrary
 
-    NUMBER_OF_TRIALS = 1
+    NUMBER_OF_TRIALS = 30
     DATASETS = [
         ("steinb1.txt",   82), # 0
         ("steinb2.txt",   83),
@@ -582,7 +464,7 @@ def main():
     ]
 
     # Prestar atenção ao tempo de execução. Isso pode demorar bastante.
-    for filename, global_optimum in DATASETS[:1]:
+    for filename, global_optimum in DATASETS:
         dataset = os.path.join("datasets","ORLibrary", filename)
         if os.path.exists(dataset):
             print(dataset, global_optimum)
@@ -593,6 +475,6 @@ def main():
 
 
 if __name__ == "__main__":
-    import os
-    # test_2()
-    main()
+
+    test_3()
+    # main()

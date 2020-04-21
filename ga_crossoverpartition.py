@@ -12,14 +12,14 @@ from collections import defaultdict, deque
 from operator import attrgetter
 
 from graph import Graph, ReaderORLibrary
-from graph.steiner_heuristics import shortest_path, shortest_path_with_origin
+from graph.steiner import shortest_path, shortest_path_with_origin
 from graph.util import gg_rooted_tree, gg_total_weight
 
 from genetic.base import Operator
-from genetic.chromosome import BaseChromosome
+from genetic.chromosome import BinaryChromosome
 
 
-class Chromossome(BaseChromosome):
+class Chromossome(BinaryChromosome):
 
     def __init__(self, subtree : Graph, start_node, cost=0):
         super().__init__(None)

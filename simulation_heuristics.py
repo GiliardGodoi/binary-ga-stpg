@@ -2,9 +2,9 @@ import csv
 from os import path
 
 from graph import Graph, ReaderORLibrary
-from graph.steiner_heuristics import (prunning_mst, shortest_path,
-                                      shortest_path_origin_prim,
-                                      shortest_path_with_origin)
+from graph.steiner import (prunning_mst, shortest_path,
+                            shortest_path_origin_prim,
+                            shortest_path_with_origin)
 
 problems_class = {
         'b' : {'max' : 18},
