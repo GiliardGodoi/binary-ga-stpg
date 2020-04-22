@@ -25,28 +25,26 @@ def random_treegraph_chromosome(graph : Graph, terminals):
     random.shuffle(alledges) # random component
 
     terminals = set(terminals)
-    disjointset = DisjointSets()
+    DS = DisjointSets()
     subgraph = Graph()
     total_cost = 0
 
     while alledges and terminals:
         v, u, weight = alledges.pop()
-        if v not in disjointset:
-            disjointset.make_set(v)
-        if u not in disjointset:
-            disjointset.make_set(u)
 
-        if disjointset.find(v) != disjointset.find(u):
-            disjointset.union(v, u)
+        if v not in DS:
+            DS.make_set(v)
+        if u not in DS:
+            DS.make_set(u)
+
+        if DS.find(v) != DS.find(u):
+            DS.union(v, u)
             total_cost += weight
             subgraph.add_edge(v, u, weight=weight)
             terminals.discard(v)
             terminals.discard(u)
 
-    chromotree = TreeBasedChromosome(subgraph)
-    chromotree.cost = total_cost
-
-    return chromotree
+    return TreeBasedChromosome(subgraph)
 
 #######################################################################
 # EVALUATING

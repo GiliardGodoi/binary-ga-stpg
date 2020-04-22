@@ -20,15 +20,15 @@ from util import (convert_binary2treegraph, convert_treegraph2binary,
 
 class HybridGeneticAlgorithm(BaseGA):
 
-    def __init__(self, STPG, **kargs):
-        super().__init__(**kargs)
+    def __init__(self, STPG, **kwargs):
+        super().__init__(**kwargs)
         self.STPG = STPG
         self.GRAPH = Graph(edges=STPG.graph)
         self.terminals = set(STPG.terminals)
         self.nro_vertices = STPG.nro_nodes
         self.chromosome_length = STPG.nro_nodes - STPG.nro_terminals
 
-    def generate_new_individual(self, **kargs):
+    def generate_new_individual(self, **kwargs):
         return random_binary_chromosome(self.chromosome_length)
 
     def eval_chromosome(self, chromosome):
@@ -58,24 +58,25 @@ class Simulation:
 
         self.CONTROL_FLAG = True
         self.MAX_ITERATIONS = 10000
+        self.MAX_LAST_IMPROVEMENT = 500
         self.POPULATION_SIZE = 100
 
-    def setUp(self, dataset='', **kargs):
+    def setUp(self, dataset='', **kwargs):
         print("executing setUP...")
 
-        self.MAX_ITERATIONS = kargs.get("max_iterations", self.MAX_ITERATIONS)
+        self.MAX_ITERATIONS = kwargs.get("max_iterations", self.MAX_ITERATIONS)
 
-        self.setup_dataset(dataset)
-        self.setup_ga()
+        self.setup_dataset(dataset,**kwargs)
+        self.setup_ga(**kwargs)
 
-    def setup_dataset(self, dataset):
+    def setup_dataset(self, dataset, **kwargs):
         print(f"setting instance problem from dataset : {dataset}")
         filename = os.path.join("datasets", "ORLibrary", dataset)
         reader = ReaderORLibrary()
         self.STPG = reader.parser(filename)
         self.GRAPH = Graph(edges=self.STPG.graph)
 
-    def setup_ga(self):
+    def setup_ga(self, **kwargs):
         print("setting GA configurations ...")
         self.GA = HybridGeneticAlgorithm(self.STPG)
         self.CONTROL_FLAG = True # if True --> BinaryRepresentation
@@ -91,8 +92,9 @@ class Simulation:
         self.GA.selection_operator = roullete_selection
         self.GA.mutation_operator = mutation_flipbit
 
-        self.GA.logger = DataLogger()
-        self.GA.logger.mainfolder = self.name
+        folder = os.path.join("outputdata", self.name, self.STPG.name)
+        trial = str(kwargs.get("nro_trial", ''))
+        self.GA.logger = DataLogger(prefix=trial, outputfolder=folder)
         self.GA.logger.register("simulation", "csv",
             "nro_trial",
             "instance_problem",
@@ -112,12 +114,23 @@ class Simulation:
             "why_stopped"
             )
 
-    def check_stop_criterion(self, **kargs):
-        iteration = kargs.get("iteration", self.MAX_ITERATIONS)
-        return iteration < self.MAX_ITERATIONS
+    def check_stop_criterion(self, **kwargs):
+        iteration = kwargs.get("iteration", self.MAX_ITERATIONS)
+        optimum = kwargs.get("global_optimum", 0)
 
-    def run(self, filename, **kargs):
-        self.setUp(dataset=filename)
+        if iteration >= self.MAX_ITERATIONS:
+            return (False, "max_generation_reached")
+        elif self.GA.last_time_improvement > self.MAX_LAST_IMPROVEMENT:
+            return (False, "stagnation")
+        elif self.GA.best_chromosome.cost == optimum :
+            return (False, "global_optimum_reached")
+        else :
+            return (True, "non stop")
+
+    def run(self, filename, **kwargs):
+        self.setUp(dataset=filename, **kwargs)
+
+        optimum = kwargs.get("global_optimum", 0)
 
         print("Starting GA execution ...")
         GA = self.GA
@@ -125,17 +138,18 @@ class Simulation:
         GA.generate_population()
         iteration = 0
         start_at = time.time()
-        while self.check_stop_criterion(iteration=iteration):
+        running = True
+        while running:
             print("                                                 Iteration:  ", iteration, end="\r")
-            GA.evaluate()
-            GA.normalize(iteration=iteration)
+            GA.evaluate(iteration=iteration)
             GA.sort_population()
             GA.selection()
             GA.recombine()
             GA.mutation(active=self.CONTROL_FLAG)
             iteration += 1
-            if (iteration % 200) == 0:
-                # print("not changing!")
+            GA.last_time_improvement += 1
+            running, why_stopped = self.check_stop_criterion(iteration=iteration, global_optimum=optimum)
+            if running and (iteration % 200) == 0:
                 self.change_the_game()
 
         GA.evaluate()
@@ -144,38 +158,40 @@ class Simulation:
         ends_at = time.time()
 
         data = {
-            "nro_trial" : kargs.get("trial", 1),
-            "global_optimum" : 0,
+            "nro_trial" : kwargs.get("trial", 1),
+            "global_optimum" : kwargs.get("global_optimum", None),
             "iterations" : iteration,
             "run_time" : (ends_at - start_at),
             "max_last_improvement" : self.GA.last_time_improvement,
-            "why_stopped" : "max_iteration_reached"
+            "why_stopped" : why_stopped
         }
         self.finish_it(**data)
 
-    def run_trials(self, nro_trials):
-        for trial in range(1, nro_trials+1):
-            self.run(trial=trial)
+    def run_trials(self, filename, total_trials, optimum):
 
-    def finish_it(self, **kargs):
+        for trial in range(1, total_trials+1):
+            print(f"RUNNING ....... {trial}")
+            self.run(filename, nro_trial=trial, global_optimum=optimum)
+
+    def finish_it(self, **kwargs):
 
         self.GA.logger.log("simulation",
-            kargs.get("nro_trial", 0),
+            kwargs.get("nro_trial", 0),
             self.STPG.name,
             self.STPG.nro_nodes,
             self.STPG.nro_edges,
             self.STPG.nro_terminals,
             self.GA.tx_crossover,
             self.GA.tx_mutation,
-            kargs.get("global_optimum", None),
+            kwargs.get("global_optimum", None),
             self.GA.best_chromosome.cost,
             self.GA.best_chromosome.fitness,
             self.POPULATION_SIZE,
             self.MAX_ITERATIONS,
-            kargs.get("iterations", 0),
-            kargs.get("run_time", 0),
-            kargs.get("max_last_improvement", 0),
-            kargs.get("why_stopped", "not_provided")
+            kwargs.get("iterations", 0),
+            kwargs.get("run_time", 0),
+            kwargs.get("max_last_improvement", 0),
+            kwargs.get("why_stopped", "not_provided")
             )
 
         ## Generates the reports
@@ -210,5 +226,35 @@ def test_1():
 
     simulation.run("steinb13.txt")
 
+def main():
+    NUMBER_OF_TRIALS = 30
+    DATASETS = [
+        ("steinb1.txt",   82), # 0
+        ("steinb2.txt",   83),
+        ("steinb3.txt",  138),
+        ("steinb4.txt",   59),
+        ("steinb5.txt",   61), # 4
+        ("steinb6.txt",  122),
+        ("steinb7.txt",  111),
+        ("steinb8.txt",  104),
+        ("steinb9.txt",  220), # 8
+        ("steinb10.txt",  86),
+        ("steinb11.txt",  88),
+        ("steinb12.txt", 174),
+        ("steinb13.txt", 165), # 12
+        ("steinb14.txt", 235),
+        ("steinb15.txt", 318), # 14
+        ("steinb16.txt", 127), # 15
+        ("steinb17.txt", 131), # 16
+        ("steinb18.txt", 218), # 17
+    ]
+
+    for filename, optimum in DATASETS[12:]:
+        simulation = Simulation(name="20200422_hybridi")
+        simulation.MAX_ITERATIONS = 10000
+        simulation.POPULATION_SIZE = 100
+        simulation.run_trials(filename, NUMBER_OF_TRIALS, optimum)
+
 if __name__ == "__main__":
-    test_1()
+    # test_1()
+    main()

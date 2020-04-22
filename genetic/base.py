@@ -82,13 +82,14 @@ class BaseGA:
             float : average cost from the current generation
         '''
         evaluated_costs = list()
-
+        count_penalized = 0
         for chromosome in self.population:
-            cost, is_disconected = self.eval_chromosome(chromosome)
+            cost, is_penalized = self.eval_chromosome(chromosome)
             chromosome.cost = cost
             evaluated_costs.append(cost)
+            if is_penalized: count_penalized += 1
 
-        return sum(evaluated_costs), max(evaluated_costs), statistics.mean(evaluated_costs)
+        self.normalize(penalized=count_penalized, **kwargs)
 
     def selection(self):
         self.selected_population = self.selection_operator(self.population, self.population_size)
@@ -138,7 +139,7 @@ class BaseGA:
 
         self.logger.log("evaluation",
             kwargs.get("iteration", 0),
-            kwargs.get("penalization", None),
+            kwargs.get("penalized", None),
             statistics.mean(population_fitness),
             statistics.stdev(population_fitness))
 

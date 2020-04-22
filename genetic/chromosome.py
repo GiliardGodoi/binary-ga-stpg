@@ -42,7 +42,7 @@ class BinaryChromosome(object):
         self.normalized = True
 
     def __str__(self):
-        return str(self.genes)
+        return self.__repr__()
 
     def __repr__(self):
         return f"{self.__class__.__name__}: {reprlib.repr(self.genes)}"

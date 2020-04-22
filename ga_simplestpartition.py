@@ -20,6 +20,7 @@ from graph.algorithms import kruskal
 from graph.disjointsets import DisjointSets
 from graph.steiner import shortest_path_with_origin
 from graph.util import gg_total_weight, has_cycle
+from util import evaluate_treegraph, random_treegraph_chromosome
 
 
 class SimplePartitionCrossover (Operator):
@@ -122,9 +123,10 @@ class GeneticAlgorithm(BaseGA):
     def __init__(self, STPG : SteinerTreeProblem):
         super().__init__()
         self.STPG = STPG
-        self.graph = Graph(edges=STPG.graph)
+        self.GRAPH = Graph(edges=STPG.graph)
+        self.terminals = set(STPG.terminals)
 
-        self.crossover_operator = SimplePartitionCrossover(self.graph)
+        self.crossover_operator = SimplePartitionCrossover(self.GRAPH)
         self.selection_operator = roullete_selection
 
         self.tx_crossover = 0.9
@@ -133,98 +135,14 @@ class GeneticAlgorithm(BaseGA):
         self.logger = DataLogger()
 
     def generate_new_individual(self, **kwargs):
-
-        edges = kwargs.get("edges", None)
-        if not edges:
-            raise AttributeError("Attribute not found")
-
-        if not isinstance(edges, list):
-            raise TypeError("all_edges")
-
-        all_edges = edges[:] # make a copy from itself
-
-        random.shuffle(all_edges)
-        terminals = set(self.STPG.terminals)
-
-        DS = DisjointSets()
-        subgraph = Graph()
-
-        while all_edges and terminals:
-            v, u, w = all_edges.pop()
-
-            if v not in DS :
-                DS.make_set(v)
-            if u not in DS:
-                DS.make_set(u)
-
-            if DS.find(v) != DS.find(u):
-                DS.union(v,u)
-                subgraph.add_edge(v, u, weight=w)
-                terminals.discard(v)
-                terminals.discard(u)
-
-        return TreeBasedChromosome(subgraph)
-
-        # GRAPH = self.graph
-        # terminals = set(self.STPG.terminals)
-        # vertices = set(terminals)
-        # for v in GRAPH.vertices:
-        #     if random.random() < self.tx_newvertice:
-        #         vertices.add(v)
-
-        # subgraph = Graph()
-        # for v in vertices :
-        #     subgraph.add_node(v)
-        #     for u in GRAPH.adjacent_to(v):
-        #         if u in vertices:
-        #             subgraph.add_edge(v, u, weight = GRAPH.weight(v,u))
-
-
-        # subgraph = kruskal(subgraph)
-        # tt = terminals - set(subgraph.vertices)
-
-        # if tt:
-        #     # print(':: bad smell :: ')
-        #     while tt:
-        #         v = tt.pop()
-        #         subgraph.add_node(v)
-        # return TreeBasedChromosome(subgraph)
-
-    def generate_population(self,**kwargs):
-
-        edges = [(v, u, self.graph.weight(v,u)) for v, u in self.graph.gen_undirect_edges()]
-        super().generate_population(edges=edges, **kwargs)
+        return random_treegraph_chromosome(self.GRAPH, self.terminals)
 
     def eval_chromosome(self, chromosome : TreeBasedChromosome):
 
-        if hasattr(chromosome, 'graph') and isinstance(chromosome.graph, Graph):
-            graph = chromosome.graph
-        elif hasattr(chromosome, 'genes') and isinstance(chromosome.genes, Graph):
-            graph = chromosome.genes
-        else:
-            print(type(chromosome.graph))
-            raise TypeError("bad chromosome")
+        def penality(qtd_partition):
+            return (qtd_partition - 1) * 100
 
-        previous = dict()
-        qtd_partitions = 0
-        total = {'cost' : 0 } # Gambiarra
-
-        def penality(k): return (k - 1) * 100
-
-        def DFS_visit(start):
-            for v in graph.adjacent_to(start):
-                if v not in previous:
-                    previous[v] = start
-                    total['cost'] += graph.weight(v, start)
-                    DFS_visit(v)
-
-        for s in graph.vertices:
-            if s not in previous:
-                previous[s] = None
-                qtd_partitions += 1
-                DFS_visit(s)
-
-        return total['cost'] + penality(qtd_partitions), qtd_partitions > 1
+        return evaluate_treegraph(chromosome, penality)
 
     def mutation(self):
         pass
@@ -302,9 +220,6 @@ def test_2():
 
 def test_3():
 
-    def test_if_steiner_tree(subgraph : Graph):
-        return False
-
     filename = os.path.join("datasets", "ORLibrary", "steinb13.txt")
 
     reader = ReaderORLibrary()
@@ -320,18 +235,17 @@ def test_3():
 
     while counter < MAX_GENERATION:
         print("Iteration: ", counter + 1, end='\r')
-        GA.evaluate()
-        GA.normalize()
+        GA.evaluate(iteration=counter)
         GA.sort_population()
         GA.selection()
         GA.recombine()
         counter += 1
 
-    GA.evaluate()
-    GA.normalize()
+    GA.evaluate(iteration=counter+1)
     print("\nPOPULATION FITNESS\n")
     print_pop(GA)
 
+    GA.logger.report()
 
     return GA
 
@@ -343,7 +257,7 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     STPG = reader.parser(dataset)
 
     # Definindo o diretório que será destinado os dados
-    datafolder = os.path.join("outputdata", "teste", STPG.name)
+    datafolder = os.path.join("outputdata", "20200422_simplest", STPG.name)
     if not os.path.exists(datafolder):
         os.makedirs(datafolder) # or mkdir
 
@@ -437,9 +351,6 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     GA.logger.report()
 
 def main():
-    import os
-    import time
-    from graph import ReaderORLibrary
 
     NUMBER_OF_TRIALS = 30
     DATASETS = [
@@ -464,17 +375,17 @@ def main():
     ]
 
     # Prestar atenção ao tempo de execução. Isso pode demorar bastante.
-    for filename, global_optimum in DATASETS:
+    for filename, global_optimum in DATASETS[12:]:
         dataset = os.path.join("datasets","ORLibrary", filename)
         if os.path.exists(dataset):
             print(dataset, global_optimum)
             print("Executing trial for : ", filename, end="\r")
-            for nro in range(1, NUMBER_OF_TRIALS + 1):
+            for nro in range(0, NUMBER_OF_TRIALS):
                 print("Executing trial for : ", filename," Trial nro: ", nro, end="\r")
                 simulation(dataset, nro_trial=nro, global_optimum=global_optimum)
 
 
 if __name__ == "__main__":
 
-    test_3()
-    # main()
+    # test_3()
+    main()
