@@ -86,7 +86,7 @@ def prim(graph : Graph, start):
         se sim, parece que está funcionando ok.
     '''
     if start not in graph.vertices:
-        raise KeyError("start is not in graph vertices")
+        raise ValueError("start is not in graph vertices")
 
     mtree = dict()
     total_weight = 0
@@ -148,13 +148,13 @@ def bfs(graph, start=None):
             a set of vertices reached
 
     Raises
-        AttributeError
-        KeyError
+        TypeError
+        ValueError
     '''
     if not start:
-        raise AttributeError("Start is not defined")
+        raise TypeError("Start is not defined")
     elif not (start in graph.vertices):
-        raise KeyError("start node is not in graph")
+        raise ValueError("start node is not in graph")
 
 
     visited_nodes = set()
@@ -182,14 +182,14 @@ def dfs(graph, start = None):
             vertices visited
 
     Raises:
-        AttributeError
-        KeyError
+        TypeError
+        ValueError
     '''
 
     if not start :
-        raise AttributeError('Start is not defined')
+        raise TypeError('Start is not defined')
     elif not (start in graph):
-        raise KeyError("Start node is not in graph")
+        raise ValueError("Start node is not in graph")
 
     vertices_done = set()
     stack = deque([start])

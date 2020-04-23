@@ -1,15 +1,14 @@
-import unittest
-from os import path
 import random
+import unittest
 from collections import deque
+from os import path
 
+from graph.graph import Graph
 from graph.reader import Reader
-from graph.graph  import Graph
+from graph.steiner import (prunning_mst, shortest_path,
+                           shortest_path_origin_prim,
+                           shortest_path_with_origin)
 
-from graph.steiner_heuristics import shortest_path
-from graph.steiner_heuristics import shortest_path_with_origin
-from graph.steiner_heuristics import shortest_path_origin_prim
-from graph.steiner_heuristics import prunning_mst
 
 class TestSTPGHeuristicas(unittest.TestCase):
 

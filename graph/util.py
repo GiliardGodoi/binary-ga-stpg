@@ -1,7 +1,51 @@
 from collections import deque
 
 from graph.graph import Graph
+from graph.reader import SteinerTreeProblem
 from graph.disjointsets import DisjointSets, Subset
+
+#######################################################################
+# VALIDATING A SOLUTION
+#######################################################################
+def is_steiner_tree(subgraph : Graph, STPG: SteinerTreeProblem):
+    '''Check if the graph passed is a Steiner Tree.
+
+    Parameters:
+        subgraph : Graph
+            represent the partial solution to be tested
+        STPG : SteinerTreeProblem
+            the problem instance itself
+
+    Returns:
+        bool: True or False
+        dict : status' test
+
+    Note: A Steiner Tree might not be a Minimal Steiner Tree.
+    '''
+    is_steiner = True
+    status = dict()
+
+    terminals = set(STPG.terminals)
+    GRAPH = Graph(edges=STPG.graph) # :(
+    def is_terminal(v):
+        return v in terminals
+
+    # Rules to check
+    status['has_cycle'] = has_cycle(subgraph)
+    status['all_terminals_in'] = all(subgraph.has_node(t) for t in terminals)
+    status['all_leaves_are_terminals'] = all(is_terminal(v) for v in subgraph.vertices if subgraph.degree(v) == 1)
+    status['all_edges_are_reliable'] = all( GRAPH.has_edge(v,u) for v, u in subgraph.gen_undirect_edges() )
+    status['graph_is_connected'] = (how_many_components(subgraph) == 1)
+
+    if status['has_cycle'] \
+        or not status['all_terminals_in'] \
+        or not status['all_leaves_are_terminals'] \
+        or not status['all_edges_are_reliable'] \
+        or not status['graph_is_connected'] :
+        is_steiner = False
+
+    return is_steiner, status
+
 
 def check_cycle_dfs(graph,start):
     '''Check if there is a cycle in a graph from a vertex, using DFS.
@@ -38,6 +82,7 @@ def check_cycle_dfs(graph,start):
 
     # return has_circle, visited
     return has_cycle, visited
+
 
 def has_cycle(graph : Graph):
 
@@ -224,7 +269,7 @@ def max_node_degree(graph : Graph):
     '''Return the vertex with the highest degree'''
 
     aa = list_degree(graph)
-    return max(aa,key=lambda x: aa[x])
+    return max(aa, key=lambda k: aa[k])
 
 
 def dfs_tree(graph : Graph, start_node):
@@ -273,3 +318,16 @@ def dfs_tree(graph : Graph, start_node):
     P(start_node)
 
     return main_tree, secondary_branch
+
+
+def how_many_components(graph : Graph):
+
+    DS = DisjointSets()
+
+    for v in graph.vertices:
+        DS.make_set(v)
+
+    for v, u in graph.gen_undirect_edges():
+        DS.union(v,u)
+
+    return len(DS.get_disjoint_sets())
