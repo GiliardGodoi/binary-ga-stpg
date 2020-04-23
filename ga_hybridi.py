@@ -94,7 +94,7 @@ class Simulation:
 
         folder = os.path.join("outputdata", self.name, self.STPG.name)
         trial = str(kwargs.get("nro_trial", ''))
-        self.GA.logger = DataLogger(prefix=trial, outputfolder=folder)
+        self.GA.logger = DataLogger(prefix=f"trial_{trial}", outputfolder=folder)
         self.GA.logger.register("simulation", "csv",
             "nro_trial",
             "instance_problem",
