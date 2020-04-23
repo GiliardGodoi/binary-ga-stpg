@@ -6,7 +6,6 @@ Created on
 """
 from collections import defaultdict
 from graph import Graph
-from graph.util import has_cycle
 
 class Subset():
 
@@ -44,31 +43,3 @@ class DisjointSets():
         else :
             self.subsets[v].parent = u
             self.subsets[u].rank += 1
-
-
-if __name__ == "__main__":
-
-    tree = Graph()
-
-    tree.add_edge('a', 'b')
-    tree.add_edge('a', 'c')
-    tree.add_edge('a', 'd')
-
-    tree.add_edge('b', 'e')
-    tree.add_edge('b', 'f')
-
-    tree.add_edge('c', 'g')
-
-    tree.add_edge('d', 'h')
-    tree.add_edge('d', 'i')
-    tree.add_edge('d', 'j')
-
-    tree.add_edge('j', 'k')
-    tree.add_edge('j', 'l')
-
-    # tree.add_edge('g', 'a') ## has a cycle
-
-    cycle = has_cycle(tree)
-
-    print(cycle)
-

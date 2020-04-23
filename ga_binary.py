@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+import os
 import random
+import statistics
 import time
 from collections import defaultdict
+from datetime import datetime
 from operator import attrgetter
 
-import statistics
-
-from datalogger import SimulationLogger, Logger
+from datalogger import Logger, SimulationLogger
 from graph import Graph, ReaderORLibrary, SteinerTreeProblem
 from graph.algorithms import prim
 
@@ -392,15 +393,18 @@ class GeneticAlgorithm(object):
         '''
         pass
 
+def gen_outfolder():
+    year, month, day, *_ = datetime.now().timetuple()
+    return f"{year}{month}{day}_binary"
 
-def run_trial(dataset: str, trial = 0, global_optimum = 0):
+def run_trial(dataset: str, trial = 0, global_optimum=0, outfolder=gen_outfolder()):
 
     # Lendo a instância do problema
     reader = ReaderORLibrary()
     STPG = reader.parser(dataset)
 
     # Definindo o diretório que será destinado os dados
-    datafolder = os.path.join("outputdata", "teste", STPG.name)
+    datafolder = os.path.join("outputdata", outfolder, STPG.name)
     if not os.path.exists(datafolder):
         os.makedirs(datafolder) # or mkdir
 
@@ -493,13 +497,9 @@ def run_trial(dataset: str, trial = 0, global_optimum = 0):
     GA.logger.report()
 
 
-if __name__ == "__main__":
-    import os
-    import time
-    from tqdm import tqdm
-    from graph import ReaderORLibrary
+def main():
 
-    NUMBER_OF_TRIALS = 30
+    NUMBER_OF_TRIALS = 1
     DATASETS = [
         ("steinb1.txt",   82), # 0
         ("steinb2.txt",   83),
@@ -532,32 +532,12 @@ if __name__ == "__main__":
                 run_trial(dataset, trial, global_optimum=global_optimum)
 
 
-
-    # reader = ReaderORLibrary()
-    # STPG = reader.parser(dataset)
-
-    # GA = GeneticAlgorithm(STPG)
-
-    # GA.generate_population(10)
-
-    # time_starts = time.time()
-    # for iteration in tqdm(range(0,10000)):
-    #     # print("Iteration: ", (iteration + 1), end="\r")
-    #     GA.evaluate()
-    #     GA.selection()
-    #     GA.recombine() # problema identificado aqui
-    #     GA.mutation()
-
-    # time_ends = time.time()
-
-    # GA.evaluate()
-
-    # GA.logger.report()
+def test():
+    dataset = os.path.join("datasets","ORLibrary", "steinb3.txt")
+    optimum =  138
+    run_trial(dataset, 1, global_optimum=optimum)
 
 
-    # print("Total run time: ", (time_ends - time_starts))
-    # subgraph, _ = GA.decode_chromosome(GA.best_chromosome)
-
-    # # has_cycle, _ = check_cycle_dfs(subtree, STPG.terminals[0])
-    # dtree, cost = prim(subgraph, STPG.terminals[0])
-    # fitness = GA.eval_chromosome(GA.best_chromosome)
+if __name__ == "__main__" :
+    # main()
+    test()
