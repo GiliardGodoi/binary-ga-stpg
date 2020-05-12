@@ -39,19 +39,7 @@ class BaseGA:
         self.best_chromosome = None
         self.last_time_improvement = 0
 
-        self.__logger = BaseLogger()
-
-    @property
-    def logger(self):
-        return self.__logger
-
-    @logger.setter
-    def logger(self, logger):
-        print('logger...')
-        self.__logger = logger
-        self.__logger.register('best_fitness', 'csv', 'iteration', 'cost', 'fitness')
-        self.__logger.register('best_from_round', 'csv', 'iteration', 'cost', 'fitness')
-        self.__logger.register("evaluation", 'csv', "iteration" , "penalization", "average", "std_deviation")
+        self.logger = BaseLogger()
 
     def generate_new_individual(self, **kwargs):
         raise NotImplementedError("")
@@ -155,15 +143,15 @@ class BaseGA:
     def update_best_chromosome(self, chromosome, **kwargs):
         if self.best_chromosome is None:
             self.best_chromosome = chromosome
-            self.__logger.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
+            self.logger.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
             self.last_time_improvement = 0
 
         elif self.best_chromosome.cost > chromosome.cost:
             self.best_chromosome = chromosome
-            self.__logger.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
+            self.logger.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
             self.last_time_improvement = 0
 
-        self.__logger.log('best_from_round', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
+        self.logger.log('best_from_round', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
 
     def sort_population(self):
         '''Sort the population by fitness attribute'''

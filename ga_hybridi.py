@@ -95,24 +95,6 @@ class Simulation:
         folder = os.path.join("outputdata", self.name, self.STPG.name)
         trial = str(kwargs.get("nro_trial", ''))
         self.GA.logger = DataLogger(prefix=f"trial_{trial}", outputfolder=folder)
-        self.GA.logger.register("simulation", "csv",
-            "nro_trial",
-            "instance_problem",
-            "nro_nodes",
-            "nro_edges",
-            "nro_terminals",
-            "tx_crossover",
-            "tx_mutation",
-            "global_optimum",
-            "best_cost",
-            "best_fitness",
-            "population_size",
-            "max_generation",
-            "iterations",
-            "run_time",
-            "max_last_improvement",
-            "why_stopped"
-            )
 
     def check_stop_criterion(self, **kwargs):
         iteration = kwargs.get("iteration", self.MAX_ITERATIONS)

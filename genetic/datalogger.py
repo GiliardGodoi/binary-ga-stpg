@@ -58,11 +58,50 @@ class DataLogger(BaseLogger):
         e irá registrar kwargs como um dicionário.
     '''
 
-    def __init__(self, prefix='', outputfolder='out'):
+    def __init__(self, prefix='', outputfolder='out', defaults=True):
 
         self.storage = dict()
         self.mainfolder = outputfolder
         self.prefix = prefix
+
+        if defaults:
+            self.set_defaults_headers()
+
+    def set_defaults_headers(self):
+
+        self.register("simulation", "csv",
+            "nro_trial",
+            "instance_problem",
+            "nro_nodes",
+            "nro_edges",
+            "nro_terminals",
+            "tx_crossover",
+            "tx_mutation",
+            "global_optimum",
+            "best_cost",
+            "best_fitness",
+            "population_size",
+            "max_generation",
+            "iterations",
+            "run_time",
+            "max_last_improvement",
+            "why_stopped")
+
+        self.register('best_fitness', 'csv',
+            'iteration',
+            'cost',
+            'fitness')
+
+        self.register('best_from_round', 'csv',
+            'iteration',
+            'cost',
+            'fitness')
+
+        self.register("evaluation", 'csv',
+            "iteration" ,
+            "penalization",
+            "average",
+            "std_deviation")
 
     def register(self, key, filetype, *args):
         if not key:
@@ -71,6 +110,8 @@ class DataLogger(BaseLogger):
             raise ValueError("filetype not provided")
         if filetype not in ['csv', 'json'] :
             raise ValueError("filetype must be csv or json")
+        if key in self.storage:
+            raise ValueError(f"Key <{key}> already exists")
 
         self.storage[key] = {"filetype": filetype , 'data' : list() }
 

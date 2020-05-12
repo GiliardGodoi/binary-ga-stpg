@@ -304,25 +304,6 @@ def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
     GA.logger.prefix = f'trial_{nro_trial}'
     GA.logger.mainfolder = datafolder
 
-    GA.logger.register("simulation", "csv",
-            "nro_trial",
-            "instance_problem",
-            "nro_nodes",
-            "nro_edges",
-            "nro_terminals",
-            "tx_crossover",
-            "tx_mutation",
-            "global_optimum",
-            "best_cost",
-            "best_fitness",
-            "population_size",
-            "max_generation",
-            "iterations",
-            "run_time",
-            "max_last_improvement",
-            "why_stopped"
-            )
-
     ## =============================================================
     ## EXECUTANDO O ALGORITMO GENÉTICO
 
