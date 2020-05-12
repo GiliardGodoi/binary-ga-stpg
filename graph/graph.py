@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 from collections import defaultdict
 
 class _VerticeView(object):
@@ -11,7 +11,7 @@ class _VerticeView(object):
 
     def __contains__(self, item):
         return item in self.__vertices
-    
+
     def __iter__(self):
         return iter(self.__vertices)
 
@@ -81,7 +81,7 @@ class Graph(object):
         '''
         if v == u :
             return
-        
+
         self.__edges[v][u] = weight
         self.__edges[u][v] = weight
 
@@ -127,7 +127,7 @@ class Graph(object):
 
     def weight(self, v, w):
         ''' Retorna o peso de uma aresta. Se a aresta não existe é retornado o valor 0 '''
-        if self.has_edge(v,w): 
+        if self.has_edge(v,w):
             return self.__edges[v][w]
         elif (v == w) and self.has_node(v):
             return 0
