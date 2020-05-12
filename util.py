@@ -196,3 +196,11 @@ def convert_binary2treegraph(chromosome, GRAPH, terminals, nro_vertices):
     newchromosome = TreeBasedChromosome(subgraph)
 
     return newchromosome
+
+#######################################################################
+# PRINTING AND SAVING
+#######################################################################
+
+def print_population(GA : GeneticAlgorithm):
+    for index, p in enumerate(GA.population, start=1):
+        print(index, ' -> cost: ', p.cost, ' - fitness: ', p.fitness)
