@@ -20,7 +20,7 @@ from graph.algorithms import kruskal
 from graph.disjointsets import DisjointSets
 from graph.steiner import shortest_path_with_origin
 from graph.util import gg_total_weight, has_cycle
-from util import evaluate_treegraph, random_treegraph_chromosome
+from util import evaluate_treegraph, print_population, random_treegraph_chromosome
 
 
 class SimplePartitionCrossover (Operator):
@@ -148,46 +148,6 @@ class GeneticAlgorithm(BaseGA):
         pass
 
 
-## =========================================================================== ##
-def print_pop(GA : GeneticAlgorithm):
-    for index, p in enumerate(GA.population, start=1):
-        print(index, ' -> cost: ', p.cost, ' - fitness: ', p.fitness)
-
-def test_1():
-
-    def __test__():
-        filename = os.path.join("datasets", "ORLibrary", "steinb13.txt")
-
-        reader = ReaderORLibrary()
-
-        STPG = reader.parser(filename)
-
-        graph = Graph(vertices=STPG.nro_nodes, edges=STPG.graph)
-
-        ## DETERMINAR DUAS SOLUÇÕES PARCIAIS PELAS HEURISTICAS
-        # escolher aleatoriamente um vértice terminal
-        s1, s2 = random.sample(STPG.terminals, k=2)
-
-        SUBTREE_A, cost1 = shortest_path_with_origin(graph, s1, STPG.terminals) # 0 ate 16
-        SUBTREE_B, cost2 = shortest_path_with_origin(graph, s2, STPG.terminals)
-
-        SPX = SimplePartitionCrossover(graphinstance=graph)
-
-        offspring = SPX.operation(TreeBasedChromosome(SUBTREE_A), TreeBasedChromosome(SUBTREE_B))
-
-        offspring_cost = gg_total_weight(offspring.graph)
-
-        print(
-                f"Parent A: {cost1}",
-                f"Parent B: {cost2}\n"
-                f"Offspring: {offspring_cost}"
-            )
-        print("Has cycle", has_cycle(offspring.graph))
-
-    for i in range(50):
-        __test__()
-        print("\n========================\n")
-
 def test_2():
 
     filename = os.path.join("datasets", "ORLibrary", "steinb13.txt")
@@ -205,7 +165,7 @@ def test_2():
     GA.sort_population()
 
     print("\nPOPULATION FITNESS\n")
-    print_pop(GA)
+    print_population(GA)
 
     GA.selection()
     GA.recombine()
@@ -214,7 +174,7 @@ def test_2():
     GA.sort_population()
 
     print("\nPOPULATION FITNESS\n")
-    print_pop(GA)
+    print_population(GA)
 
     return GA
 
@@ -243,13 +203,13 @@ def test_3():
 
     GA.evaluate(iteration=counter+1)
     print("\nPOPULATION FITNESS\n")
-    print_pop(GA)
+    print_population(GA)
 
     GA.logger.report()
 
     return GA
 
-def simulation(dataset: str, nro_trial = 0, global_optimum = 0):
+def simulation(dataset: str, nro_trial=0, global_optimum=0):
     '''Run a simulation trial'''
 
     # Lendo a instância do problema

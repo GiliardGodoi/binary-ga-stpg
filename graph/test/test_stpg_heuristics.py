@@ -8,6 +8,7 @@ from graph.reader import Reader
 from graph.steiner import (prunning_mst, shortest_path,
                            shortest_path_origin_prim,
                            shortest_path_with_origin)
+from graph.util import has_cycle
 
 
 class TestSTPGHeuristicas(unittest.TestCase):
@@ -19,7 +20,7 @@ class TestSTPGHeuristicas(unittest.TestCase):
         self.graph = Graph(vertices = self.stpg_instance.nro_nodes,
                             edges=self.stpg_instance.graph)
 
-        random.seed()
+        random.seed(1234567890)
 
 
     def test_instance_reading(self):
@@ -101,37 +102,8 @@ class TestSTPGHeuristicas(unittest.TestCase):
         ss = all_vertices - terminals
         self.assertTrue(ss)
 
-        stpg = self.stpg_instance
-        has_cycles = self.check_cycles_dfs(steiner_tree, stpg.terminals[8])
-        self.assertFalse(has_cycles)
-
-
-    def check_cycles_dfs(self, graph, start):
-        '''
-            Verifica se existe um ciclo em um grafo a partir de um vértice.
-            É claro, essa função não foi testada.
-        '''
-        stack = deque()
-
-        visited = set([start])
-        prev = dict()
-
-        stack.append(start)
-
-        has_circle = False
-
-        while stack:
-            v = stack.pop()
-            visited.add(v)
-            for u in graph.adjacent_to(v):
-                if u not in visited :
-                    stack.append(u)
-                    prev[u] = v
-                elif not prev[v] == u :
-                    has_circle = True
-
-        return has_circle
-
+        cycles = has_cycle(steiner_tree)
+        self.assertFalse(cycles)
 
 if __name__ == "__main__" :
     unittest.main()

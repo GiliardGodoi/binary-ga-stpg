@@ -1,6 +1,7 @@
 import random
 from itertools import compress, filterfalse
 
+from genetic.base import BaseGA
 from genetic.chromosome import BinaryChromosome, TreeBasedChromosome
 from graph import Graph, SteinerTreeProblem
 from graph.disjointsets import DisjointSets
@@ -53,37 +54,43 @@ def random_treegraph_chromosome(graph : Graph, terminals):
 def vertices_from_binary_chromosome(chromosome, terminals, nro_vertices):
 
     terminals = set(terminals)
+    vertices = set()
+    genes = chromosome.genes
+    index = len(genes) - 1
 
-    def is_terminal(v):
-        return v in terminals
-
-    non_terminals = filterfalse(is_terminal, range(1, nro_vertices+1))
-    genes = (int(g) for g in chromosome.genes)
-    vertices = set(compress(non_terminals, genes)).union(terminals)
+    for v in range(nro_vertices, 0, -1):
+        if v in terminals:
+            vertices.add(v)
+        else:
+            if genes[index] == '1':
+                vertices.add(v)
+            index -= 1
 
     return vertices
 
 def evaluate_treegraph(chromosome, penality):
 
-        total_cost = 0
-        qtd_partition = 0
-        DS = DisjointSets()
+    if type(chromosome) is not TreeBasedChromosome:
+        raise TypeError("chromosome is not what was expected")
 
-        for v, u in chromosome.genes.gen_undirect_edges():
-            if v not in DS:
-                DS.make_set(v)
-            if u not in DS:
-                DS.make_set(u)
-            if DS.find(v) == DS.find(u):
-                print("FOI IDENTIFICADO UM CICLO EM UMA DAS SOLUÇÕES")
-            DS.union(v,u)
-            total_cost +=  chromosome.genes.weight(v, u)
+    total_cost = 0
+    qtd_partition = 0
+    DS = DisjointSets()
 
-        qtd_partition = len(DS.get_disjoint_sets())
+    for v in chromosome.graph.vertices:
+        DS.make_set(v)
 
-        total_cost += penality(qtd_partition)
+    for v, u in chromosome.graph.gen_undirect_edges():
+        if DS.find(v) == DS.find(u):
+            print("FOI IDENTIFICADO UM CICLO EM UMA DAS SOLUÇÕES")
+        DS.union(v,u)
+        total_cost +=  chromosome.graph.weight(v, u)
 
-        return total_cost, qtd_partition > 1
+    qtd_partition = len(DS.get_disjoint_sets())
+
+    total_cost += penality(qtd_partition)
+
+    return total_cost, qtd_partition > 1
 
 def evaluate_binary(chromosome, GRAPH, terminals, nro_vertices, penality):
 
@@ -102,14 +109,11 @@ def evaluate_binary(chromosome, GRAPH, terminals, nro_vertices, penality):
         # (o trabalho de Kapsalis utilizava o algoritmo de Prim)
         for v in vertices:
             dones.add(v)
+            DS.make_set(v) # para construir a MST
             for u in GRAPH.adjacent_to(v):
                 if (u in vertices) and (u not in dones):
                     weight = GRAPH.weight(v,u)
                     queue.push(weight, (v, u, weight))
-
-        ## Monta a MST baseado no algoritmo de Kruskal
-        for v in vertices:
-            DS.make_set(v)
 
         total_cost = 0
         while queue:
@@ -136,8 +140,7 @@ def convert_treegraph2binary(chromosome, terminals, nro_vertices):
     if type(chromosome) is not TreeBasedChromosome:
         raise TypeError("chromosome is not what was expected")
 
-    def is_terminal(v):
-        v in terminals
+    terminals = set(terminals)
 
     subgraph = chromosome.genes
     genes = ['0'] * nro_vertices # all vertices in the instance problem
@@ -147,7 +150,7 @@ def convert_treegraph2binary(chromosome, terminals, nro_vertices):
         genes[v-1] = '1'
 
     # choosing only the non_terminals positions
-    genes = compress(genes, (not is_terminal(i) for i in range(1, nro_vertices+1)))
+    genes = (gene for v, gene in enumerate(genes, start=1) if v not in terminals)
 
     return BinaryChromosome(''.join(genes))
 
@@ -171,36 +174,25 @@ def convert_binary2treegraph(chromosome, GRAPH, terminals, nro_vertices):
     # formar uma MST baseado no algoritmo de Kruskal
     for v in vertices:
         dones.add(v)
+        disjointset.make_set(v) # para construir a MST
         subgraph.add_node(v) # garantir a inserção de um vértice isolado
         for u in GRAPH.adjacent_to(v):
             if (u in vertices) and (u not in dones):
                 weight = GRAPH.weight(v, u)
                 queue.push(weight, (v, u, weight))
 
-    ## Monta a MST baseado no algoritmo de Kruskal
-    for v in vertices:
-        disjointset.make_set(v)
-
-    total_cost = 0
-    nro_edges = 0
     while queue:
         v, u, weight = queue.pop()
         if disjointset.find(v) != disjointset.find(u):
-            total_cost  += weight
             subgraph.add_edge(v, u, weight=weight)
-            nro_edges += 1
             disjointset.union(v, u)
-        else:
-            pass
 
-    newchromosome = TreeBasedChromosome(subgraph)
-
-    return newchromosome
+    return TreeBasedChromosome(subgraph)
 
 #######################################################################
 # PRINTING AND SAVING
 #######################################################################
 
-def print_population(GA : GeneticAlgorithm):
+def print_population(GA : BaseGA):
     for index, p in enumerate(GA.population, start=1):
         print(index, ' -> cost: ', p.cost, ' - fitness: ', p.fitness)
