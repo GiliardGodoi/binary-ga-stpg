@@ -118,6 +118,8 @@ class DataLogger(BaseLogger):
         if (filetype == 'csv') and args and all(isinstance(item, str ) for item in args):
             self.storage[key]['data'].append(args)
             self.storage[key]['size'] = len(args)
+        elif filetype == 'json' :
+            pass
         else:
             raise TypeError("Header not provided or bad formated for csv file type")
 
@@ -185,14 +187,14 @@ class DataLogger(BaseLogger):
         if mode not in ['w', 'a', 'x']:
             raise TypeError("Mode must be w or w+")
 
-        if not isinstance(data, dict):
-            print("")
+        if not isinstance(data, (dict, list)):
+            raise TypeError("Data must be a list or dictionary")
 
         filename = self.__enforce_extension__(filename, enforce_extension='.json')
 
         try:
             with open(filename, mode) as file :
-                json.dump(data, fp=file, indent=4)
+                json.dump(data, fp=file, indent=2)
         except Exception as msg:
             print(msg)
             return False
