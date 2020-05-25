@@ -2,13 +2,13 @@ import os
 import random
 import unittest
 
-from ga_simplestpartition import SimplePartitionCrossover
+from px_simpliest import SimplePartitionCrossover
 from genetic.chromosome import BinaryChromosome, TreeBasedChromosome
 from graph import Graph, ReaderORLibrary
 from graph.algorithms import prim
 from graph.steiner import shortest_path_with_origin
 from graph.util import has_cycle, is_steiner_tree
-from util import (convert_binary2treegraph,
+from tools import (convert_binary2treegraph,
                 convert_treegraph2binary,
                 evaluate_binary,
                 evaluate_treegraph,

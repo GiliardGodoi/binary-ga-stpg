@@ -4,11 +4,14 @@ import unittest
 from pprint import pprint
 
 from graph import Graph, ReaderORLibrary
-from ga_simplestpartition import SimplePartitionCrossover
+from ga_simplestpartition import PXSimpliestGeneticAlgorithm
+
 from graph.steiner import shortest_path_with_origin
 from graph.util import has_cycle, is_steiner_tree
 from genetic.chromosome import TreeBasedChromosome
-from util import evaluate_treegraph
+from tools import evaluate_treegraph
+from genetic.datalogger import BaseLogger
+from px_simpliest import SimplePartitionCrossover
 
 
 class TestSimpliestPartitionCrossover(unittest.TestCase):
@@ -50,4 +53,24 @@ class TestSimpliestPartitionCrossover(unittest.TestCase):
         self.assertTrue(is_smt)
         self.assertFalse(has_cycle(offspring.graph))
 
+    def test_run_ga(self):
+
+        STPG = self.STPG
+
+        GA = PXSimpliestGeneticAlgorithm(STPG)
+        GA.logger = BaseLogger()
+
+        GA.generate_population(population_size=10)
+        MAX_GENERATION = 100
+        counter = 0
+
+        while counter < MAX_GENERATION:
+            # print("Iteration: ", counter + 1, end='\r')
+            GA.evaluate(iteration=counter)
+            GA.sort_population()
+            GA.selection()
+            GA.recombine()
+            counter += 1
+
+        GA.evaluate(iteration=counter+1)
 
