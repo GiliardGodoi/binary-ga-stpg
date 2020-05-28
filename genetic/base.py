@@ -8,7 +8,6 @@ from genetic.datalogger import BaseLogger
 from genetic.mutation import mutation_flipbit
 from genetic.selection import roullete_selection
 
-
 class Operator:
 
     def __init__(self):
@@ -23,7 +22,7 @@ class Operator:
 class BaseGA:
     '''Define the basic class to define a GA'''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parameters, *args, **kwargs):
 
         self.population = list()
         self.population_size = 10
@@ -40,6 +39,8 @@ class BaseGA:
         self.last_time_improvement = 0
 
         self.logger = BaseLogger()
+
+        self.__dict__.update(parameters)
 
     def generate_new_individual(self, **kwargs):
         raise NotImplementedError("")
@@ -156,3 +157,6 @@ class BaseGA:
     def sort_population(self):
         '''Sort the population by fitness attribute'''
         self.population.sort(key=attrgetter("fitness"))
+
+    def check_it(self, **kwargs):
+        self.last_time_improvement += 1

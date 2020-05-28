@@ -437,7 +437,7 @@ def test():
     import random
     from os import path
     from graph import Reader
-    from graph.steiner_heuristics import shortest_path_with_origin
+    from graph.steiner import shortest_path_with_origin
 
     filename = path.join("datasets", "ORLibrary", "steinb13.txt")
 
