@@ -1,6 +1,8 @@
+import logging
 import random
 import statistics
 from operator import attrgetter
+import os
 
 from genetic.chromosome import BinaryChromosome
 from genetic.crossover import crossover_2points
@@ -38,7 +40,7 @@ class BaseGA:
         self.best_chromosome = None
         self.last_time_improvement = 0
 
-        self.logger = BaseLogger()
+        self.datacolector = BaseLogger()
 
         self.__dict__.update(parameters)
 
@@ -126,7 +128,7 @@ class BaseGA:
                 best_fitness_value = chromosome.fitness
                 best_chromosome = chromosome
 
-        self.logger.log("evaluation",
+        self.datacolector.log("evaluation",
             kwargs.get("iteration", 0),
             kwargs.get("penalized", None),
             statistics.mean(population_fitness),
@@ -144,15 +146,15 @@ class BaseGA:
     def update_best_chromosome(self, chromosome, **kwargs):
         if self.best_chromosome is None:
             self.best_chromosome = chromosome
-            self.logger.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
+            self.datacolector.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
             self.last_time_improvement = 0
 
         elif self.best_chromosome.cost > chromosome.cost:
             self.best_chromosome = chromosome
-            self.logger.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
+            self.datacolector.log('best_fitness', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
             self.last_time_improvement = 0
 
-        self.logger.log('best_from_round', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
+        self.datacolector.log('best_from_round', kwargs.get("iteration", 0), chromosome.cost, chromosome.fitness)
 
     def sort_population(self):
         '''Sort the population by fitness attribute'''

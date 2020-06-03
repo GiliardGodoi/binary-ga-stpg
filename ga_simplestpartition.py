@@ -6,7 +6,7 @@ Created on Sun Mar 15 16:26:16 2020
 """
 from genetic.base import BaseGA
 from genetic.chromosome import TreeBasedChromosome
-from genetic.datalogger import DataLogger
+from genetic.datalogger import BaseLogger
 from genetic.selection import roullete_selection
 from graph import Graph, SteinerTreeProblem
 from tools import evaluate_treegraph, random_treegraph_chromosome
@@ -23,8 +23,6 @@ class PXSimpliestGeneticAlgorithm(BaseGA):
 
         self.crossover_operator = SimplePartitionCrossover(self.GRAPH)
         self.selection_operator = roullete_selection
-
-        self.logger = DataLogger()
 
     def generate_new_individual(self, **kwargs):
         return random_treegraph_chromosome(self.GRAPH, self.terminals)

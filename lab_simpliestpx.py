@@ -17,7 +17,7 @@ test = {
     "max_generation" : 1000,
 }
 
-simulation = SimulatorGA("teste_hybridi", test)
+simulation = SimulatorGA("teste_simpliest", test)
 
 simulation.set_gaclass(PXSimpliestGeneticAlgorithm)
 simulation.setup_dataset("steinb13.txt")

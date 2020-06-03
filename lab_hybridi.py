@@ -17,7 +17,7 @@ test = {
     "tx_mutation" : 0.2,
     "population_size" : 10,
     "max_generation" : 1000,
-    "change_interval" : 100
+    "change_interval" : 50
 }
 
 simulation = SimulatorGA("teste_hybridi", test)

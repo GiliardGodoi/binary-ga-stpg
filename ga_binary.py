@@ -9,7 +9,7 @@ from operator import attrgetter
 from genetic.base import BaseGA
 from genetic.chromosome import BinaryChromosome
 from genetic.crossover import crossover_2points
-from genetic.datalogger import BaseLogger, DataLogger
+from genetic.datalogger import BaseLogger
 from genetic.mutation import mutation_flipbit
 from genetic.selection import roullete_selection
 from graph import Graph, ReaderORLibrary, SteinerTreeProblem
@@ -41,8 +41,6 @@ class BinaryGeneticAlgorithm(BaseGA):
             if not node in self.terminals:
                 self.map_nodes[index] = node
                 index += 1
-
-        self.logger = DataLogger(outputfolder="teste")
 
     def __mapper(self, index):
         return self.map_nodes[index]
@@ -160,7 +158,7 @@ class BinaryGeneticAlgorithm(BaseGA):
                 bfn_chromosome = chromosome
 
         self.update_best_chromosome(bfn_chromosome,**kwargs)
-        self.logger.log("evaluation",
+        self.datacolector.log("evaluation",
             kwargs.get("iteration", 0),
             count_penalized,
             statistics.mean(population_fitness),

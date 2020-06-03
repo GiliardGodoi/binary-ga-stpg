@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import logging
 from collections import defaultdict
 
 
@@ -211,18 +212,3 @@ class DataLogger(BaseLogger):
                 filename += enforce_extension
 
         return filename
-
-
-if __name__ == "__main__":
-    from tqdm import tqdm
-    import random
-
-
-    logger = DataLogger(outputfolder=None)
-    logger.register("teste",'i', 'int', 'measure', 'category', 'temp')
-
-    for i in tqdm(range(100000)):
-        logger.log("teste", i, random.randint(50,1000), random.random() * 100, random.choice(['A', 'B', 'C']), random.random() * 100)
-
-
-    logger.report()
