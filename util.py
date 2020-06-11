@@ -20,6 +20,12 @@ STEIN_B = [
     ("steinb18.txt", 218), # 17
 ]
 
+def display(*args, end="\n"):
+    print(*args, end=end)
+
+def display_population(GA : BaseGA):
+    for index, p in enumerate(GA.population, start=1):
+        print(index, ' -> cost: ', p.cost, ' - fitness: ', p.fitness)
 
 def instance_problem(filename, folder,):
     pass
