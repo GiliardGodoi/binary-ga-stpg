@@ -1,5 +1,5 @@
 
-from random import sample, choice
+from random import choice, random, sample
 
 def crossover_2points(parent_a, parent_b):
     length_a, length_b = len(parent_a), len(parent_b)
@@ -22,3 +22,17 @@ def crossover_Npoints(parent_a, parent_b, n=2):
     points = sample(range(0,length_a), k=n)
 
     raise NotImplementedError
+
+def crossover_uniform(chromosome_a, chromosome_b, pbcrossover=0.5, **kwargs):
+
+    assert len(chromosome_a) == len(chromosome_b), "chromosome must have the same length"
+
+    # list comprehension
+    chromosome = [ a if random() < pbcrossover else b
+                        for a, b in zip(chromosome_a, chromosome_b) ]
+
+    # desta forma se o chromosomo receber uma lista de números inteiros ele também vai funcionar
+    if isinstance(chromosome_a, str) or isinstance(chromosome_b, str):
+        chromosome = ''.join(chromosome)
+
+    return chromosome
