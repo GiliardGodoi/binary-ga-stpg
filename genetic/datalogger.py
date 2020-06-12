@@ -86,7 +86,7 @@ class DataLogger(BaseLogger):
             "iterations",
             "run_time",
             "max_last_improvement",
-            "why_stopped")
+            "stopped_by")
 
         self.register('best_fitness', 'csv',
             'iteration',
@@ -150,6 +150,30 @@ class DataLogger(BaseLogger):
         else:
             pass
 
+    def log_simulation(self, POPULATION: 'Population',
+                       STPG : "SteinerTreeProblem",
+                       SIMULATION : "Simulation"):
+
+        bestchromosome = POPULATION.best_chromosome
+
+        self.log("simulation",
+            SIMULATION.trial,
+            STPG.name,
+            STPG.nro_nodes,
+            STPG.nro_edges,
+            STPG.nro_terminals,
+            SIMULATION.tx_crossover,
+            SIMULATION.tx_mutation,
+            SIMULATION.globaloptimum,
+            bestchromosome.cost,
+            bestchromosome.fitness,
+            POPULATION.intended_size,
+            SIMULATION.max_generation,
+            POPULATION.generation,
+            SIMULATION.run_time,
+            bestchromosome.last_improvement,
+            SIMULATION.stoppedby)
+
     def report(self):
 
         if not os.path.exists(self.mainfolder):
@@ -211,17 +235,3 @@ class DataLogger(BaseLogger):
                 filename += enforce_extension
 
         return filename
-
-
-class PopulationLogger(BaseLogger):
-
-    def __init__(self,filename, prefix='', outputfolder='outputdata'):
-        super().__init__(prefix=prefix, outputfolder=outputfolder)
-        self.filename = filename
-        self.data
-
-    def log(self, population: 'Population'):
-        pass
-
-    def report(self):
-        pass
