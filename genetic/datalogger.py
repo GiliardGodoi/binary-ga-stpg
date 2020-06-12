@@ -150,7 +150,6 @@ class DataLogger(BaseLogger):
         else:
             pass
 
-
     def report(self):
 
         if not os.path.exists(self.mainfolder):
@@ -212,3 +211,17 @@ class DataLogger(BaseLogger):
                 filename += enforce_extension
 
         return filename
+
+
+class PopulationLogger(BaseLogger):
+
+    def __init__(self,filename, prefix='', outputfolder='outputdata'):
+        super().__init__(prefix=prefix, outputfolder=outputfolder)
+        self.filename = filename
+        self.data
+
+    def log(self, population: 'Population'):
+        pass
+
+    def report(self):
+        pass

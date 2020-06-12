@@ -23,8 +23,8 @@ STEIN_B = [
 def display(*args, end="\n"):
     print(*args, end=end)
 
-def display_population(GA : BaseGA):
-    for index, p in enumerate(GA.population, start=1):
+def display_population(population : "Population"):
+    for index, p in enumerate(population, start=1):
         print(index, ' -> cost: ', p.cost, ' - fitness: ', p.fitness)
 
 def instance_problem(filename, folder,):

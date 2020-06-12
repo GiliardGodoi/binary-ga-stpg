@@ -1,7 +1,5 @@
 import random
 
-from genetic.base import BaseGA
-from genetic.chromosome import BinaryChromosome, TreeBasedChromosome
 from graph import Graph, SteinerTreeProblem
 from graph.disjointsets import DisjointSets
 from graph.priorityqueue import PriorityQueue
@@ -40,7 +38,7 @@ def random_treegraph_chromosome(graph : Graph, terminals):
             terminals.discard(v)
             terminals.discard(u)
 
-    return TreeBasedChromosome(subgraph)
+    return subgraph
 
 #######################################################################
 # EVALUATING
@@ -64,9 +62,6 @@ def vertices_from_binary_chromosome(chromosome, terminals, nro_vertices):
     return vertices
 
 def evaluate_treegraph(chromosome, penality):
-
-    if type(chromosome) is not TreeBasedChromosome:
-        raise TypeError("chromosome is not what was expected")
 
     total_cost = 0
     qtd_partition = 0
@@ -132,9 +127,6 @@ def evaluate_binary(chromosome, GRAPH, terminals, nro_vertices, penality):
 def convert_treegraph2binary(chromosome, terminals, nro_vertices):
     '''Converts from TreeChromosome to a BinaryChromosome'''
 
-    if type(chromosome) is not TreeBasedChromosome:
-        raise TypeError("chromosome is not what was expected")
-
     terminals = set(terminals)
 
     subgraph = chromosome.genes
@@ -147,13 +139,10 @@ def convert_treegraph2binary(chromosome, terminals, nro_vertices):
     # choosing only the non_terminals positions
     genes = (gene for v, gene in enumerate(genes, start=1) if v not in terminals)
 
-    return BinaryChromosome(''.join(genes))
+    return ''.join(genes)
 
 def convert_binary2treegraph(chromosome, GRAPH, terminals, nro_vertices):
     '''Converts from BinaryChromosome to TreeChromosome'''
-
-    if type(chromosome) is not BinaryChromosome:
-        raise TypeError("chromosome is not what was expected")
 
     queue = PriorityQueue()
     disjointset = DisjointSets()
@@ -182,7 +171,7 @@ def convert_binary2treegraph(chromosome, GRAPH, terminals, nro_vertices):
             subgraph.add_edge(v, u, weight=weight)
             disjointset.union(v, u)
 
-    return TreeBasedChromosome(subgraph)
+    return subgraph
 
 #######################################################################
 # PRINTING AND SAVING
