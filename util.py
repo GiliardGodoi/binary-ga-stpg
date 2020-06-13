@@ -1,3 +1,7 @@
+from os import path
+
+from graph import Graph
+from graph.reader import ReaderORLibrary
 
 STEIN_B = [
     ("steinb1.txt",   82), # 0
@@ -27,5 +31,11 @@ def display_population(population : "Population"):
     for index, p in enumerate(population, start=1):
         print(index, ' -> cost: ', p.cost, ' - fitness: ', p.fitness)
 
-def instance_problem(filename, folder,):
-    pass
+def instance_problem(*filepath):
+
+    filename = path.join(*filepath)
+    reader = ReaderORLibrary()
+    STPG = reader.parser(filename)
+    STPG.graph = Graph(edges=STPG.graph)
+
+    return STPG
