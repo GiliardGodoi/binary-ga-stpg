@@ -48,14 +48,13 @@ def vertices_from_binary_chromosome(chromosome, terminals, nro_vertices):
 
     terminals = set(terminals)
     vertices = set()
-    genes = chromosome.genes
-    index = len(genes) - 1
+    index = len(chromosome) - 1
 
     for v in range(nro_vertices, 0, -1):
         if v in terminals:
             vertices.add(v)
         else:
-            if genes[index] == '1':
+            if chromosome[index] == '1':
                 vertices.add(v)
             index -= 1
 
@@ -80,7 +79,7 @@ def evaluate_treegraph(chromosome, penality):
 
     total_cost += penality(qtd_partition)
 
-    return total_cost, qtd_partition > 1
+    return total_cost, qtd_partition
 
 def evaluate_binary(chromosome, GRAPH, terminals, nro_vertices, penality):
 
@@ -118,7 +117,7 @@ def evaluate_binary(chromosome, GRAPH, terminals, nro_vertices, penality):
 
         total_cost += penality(qtd_partition)
 
-        return total_cost, qtd_partition > 1
+        return total_cost, qtd_partition
 
 #######################################################################
 # CONVERTING

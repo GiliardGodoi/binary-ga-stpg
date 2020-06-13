@@ -1,5 +1,6 @@
 
 import statistics
+from operator import attrgetter
 from random import choices
 
 from genetic.datalogger import BaseLogger
@@ -59,6 +60,8 @@ class BasePopulation:
             evaluated_costs.append(cost)
             if partitions > 1: count_penalized += 1
 
+        return self
+
     def select(self, selector_func, **kwargs):
         self.selected_population = selector_func(self.individuals, **kwargs)
 
@@ -71,13 +74,15 @@ class BasePopulation:
 
         while len(newpopulation) < intended_size:
             parent_a, parent_b = choices(self.selected_population, k=2)
-            result = mate_func(parent_a.chromosome, parent_b.choromose, **kwargs)
+            result = mate_func(parent_a.chromosome, parent_b.chromosome, **kwargs)
             if isinstance(result, (list, tuple)) :
                 newpopulation.extend(Individual(child) for child in result)
             else:
                 newpopulation.append(Individual(result))
 
         self._update_population(newpopulation)
+
+        return self
 
     def mutation(self, mutate_func,tx_mutation=0.2, **kwargs):
         for individuo in self.individuals:
