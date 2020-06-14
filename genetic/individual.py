@@ -14,7 +14,17 @@ class Individual:
         self.partitions = 0
 
     def __repr__(self):
-        return f"{self.__class__.__name__}: {reprlib.repr(self.genes)}"
+        return f"{self.__class__.__name__}({reprlib.repr(self.chromosome)}, cost : {self.cost})"
+
+    def __copy__(self):
+        newer = Individual(chromosome=self.chromosome, cost=self.cost)
+        newer.fitness = self.fitness
+        newer.is_normalized = self.is_normalized
+        newer.partitions = self.partitions
+        newer.age = self.age
+        newer.last_improvement = self.last_improvement
+
+        return newer
 
     @property
     def cost(self):
@@ -32,8 +42,9 @@ class Individual:
 
     @fitness.setter
     def fitness(self, value):
-        self._fitness = value
-        self.is_normalized = True
+        if value is not None:
+            self._fitness = value
+            self.is_normalized = True
 
     def evaluate(self, eval_func, **kwargs):
         result = eval_func(self.chromosome)
