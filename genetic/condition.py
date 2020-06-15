@@ -1,41 +1,72 @@
+"""
+    class condition
+
+    decorator to define a function like a stop condition
+
+
+    O problema aqui é que o decorator define uma condição que poderá ser vista
+    onde o módulo condition for instanciado.
+    temos que ativamente ativar ou desativar um condição pela propriedade `active`
+    Isso permite definir diversas condições para o algortimo.
+
+    Mas a abordagem com gerenciado de contexto podemos definir uma condição somente
+    para um processo com
+
+    with TimeLimitConstrain(4000):
+        pop.evol(evo, n=10_000)
+
+    and Its done!
+
+    It'd be nice if we could do something like:
+
+    with (TimeLimitConstrain(4000),
+        BestKnownReached(163)) :
+
+        pop.evol(evo, n=10_000)
+
+
+"""
+class StopConditionReached(Exception):
+    pass
 
 class condition:
 
     conditions = set()
 
-    def __init__(self, func, msg="Stop condition reached", active=True):
-        if active:
-            self.conditions.add(func)
+    def __init__(self, func, msg=None, active=True):
         self.func = func
-        self.msg = msg
-        self._active = active
+        self.msg = msg or func.__name__
+        self.active = active
 
-    def __call__(self,*args, **kwargs):
-        return self.func(*args, **kwargs)
+    def __str__(self):
+        return f"Condition({self.msg}, activate : {self.active})"
 
-    @property
-    def active(self):
-        return self._active
+    def __repr__(self):
+        return f"Condition({self.msg}, activate : {self.active})"
 
-    @active.setter
-    def active(self, value):
-        if value :
-            self._active = True
-            self.conditions.add(self.func)
-        else :
-            self._active = False
-            self.conditions.remove(self.func)
+    def __call__(self, population):
+        return self.func(population)
 
-    @classmethod
-    def params(cls, msg="Stop condition reached", active=True):
+    def __enter__(self):
+        if self.active:
+            self.conditions.add(self)
 
-        def decorator(func):
-            print(func.__name__)
-            return cls(func, msg=msg, active=active)
-
-        return decorator
-
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.active:
+            self.conditions.remove(self)
 
     @classmethod
     def check(cls, population):
-        return all(condition(population) for condition in cls.conditions)
+        for condition in cls.conditions:
+            if condition and not condition(population):
+                raise StopConditionReached(condition.msg)
+
+        return True
+
+    @classmethod
+    def params(cls, msg="stop condition reached", active=True):
+
+        def decorator(func):
+            return condition(func, msg=None, active=active)
+
+        return decorator
