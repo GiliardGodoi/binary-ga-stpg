@@ -19,28 +19,7 @@ def crossover_1point(parent_a, parent_b):
     return (parent_a[:index] + parent_b[index:])
 
 def crossover_Npoints(parent_a, parent_b, n=2):
-    length_a, length_b = len(parent_a), len(parent_b)
-    assert length_a == length_b, "chromosomes doesn't have the same length"
-    assert n < (length_a - 1) , f"It is allowed only {(length_a - 1)} cuts. It was given {n}"
 
-    choose_parents = cycle("AB")
-    parents = [ next(choose_parents) for _ in range(n+1) ]
-    breakpoints = sample(range(0,length_a+1), k=n)
-    breakpoints.sort()
-
-    def choose(idx):
-        return parents[bisect(breakpoints, idx)]
-
-    newchromosome = [ genes[0] if choose(idx) == "A" else genes[1] for idx, genes in enumerate(zip(parent_a, parent_b))]
-
-    if isinstance(parent_a, str):
-        newchromosome = ''.join(newchromosome)
-
-    return newchromosome
-
-def crossover_nbreakpoints(parent_a, parent_b, n=2):
-
-    raise RuntimeWarning("It doesnt works for n > 2")
     length_a, length_b = len(parent_a), len(parent_b)
     assert length_a == length_b, "chromosomes doesn't have the same length"
     assert n <= (length_a - 1) , f"It is allowed only {(length_a - 1)} cuts. It was given {n}"
@@ -48,7 +27,8 @@ def crossover_nbreakpoints(parent_a, parent_b, n=2):
     def chunck(parent,start, end):
         return parent[start:end]
 
-    points = [0] + sample(range(0, length_a+1), k=n) + [length_a]
+    points = [0] + sample(range(length_a), k=n) + [length_a]
+    points.sort()
     flag = True
     newchromosome = list()
     for start, end in zip(points, points[1:]):
