@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
 
     simulation(population_size= 100,
-                n_iterations= 5_000,
+                n_iterations= 500,
                 n_trials = 6,
                 improvement_interval = 500,
                 stpg_filename = "steinb15.txt",
