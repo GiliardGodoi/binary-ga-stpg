@@ -11,7 +11,7 @@
         - Definir os critérios de parada.
         - Definir os loggers e o diretório onde os dados da simulação serão persistidos.
 """
-from collections import namedtuple
+from datetime import datetime
 from os import path
 import time
 
@@ -23,10 +23,13 @@ from genetic.binary.selection import roullete
 from genetic.condition import StopConditionReached, condition
 from genetic.datalogger import DataLogger
 from genetic.population import BasePopulation as Population
+from logger import get_logger, filename_date
 from tools import evaluate_binary
 from util import instance_problem
 
-class Simulation:
+syslog = get_logger(__name__, file_dst=filename_date("simulation"))
+
+class SimulationData:
 
     def __init__(self):
         self.name = None
@@ -77,7 +80,17 @@ def simulation(population_size: int = 100,
                 simulation_name : str = None
             ):
 
-    simdata = Simulation()
+    syslog.info("INIT SIMULATION")
+    syslog.info(f"  params   simulation_name       {simulation_name}")
+    syslog.info(f"  params   population_size       {population_size}")
+    syslog.info(f"  params   n_iterations          {n_iterations}")
+    syslog.info(f"  params   improvement_interval  {improvement_interval}")
+    syslog.info(f"  params   stpg_filename         {stpg_filename}")
+    syslog.info(f"  params   best_known_solution   {best_known_solution}")
+    syslog.info(f"  params   evol_func         {evol_func.__name__}")
+
+
+    simdata = SimulationData()
     simdata.name = simulation_name
     simdata.max_generation = n_iterations
     simdata.globaloptimum = best_known_solution
@@ -86,26 +99,32 @@ def simulation(population_size: int = 100,
     def max_generation(population : Population):
         return population.generation < n_iterations
 
-    # @condition.params(active=(best_known_solution is not None))
-    @condition.params(active=False)
+    @condition.params(active=(best_known_solution is not None))
     def best_known_reached(population : Population):
         return not population.best_chromosome.cost == best_known_solution
 
-    # @condition.params(active=(best_known_solution is not None))
-    @condition.params(active=False)
+    @condition.params(active=(best_known_solution is not None))
     def bestcost_lessthan(population: Population):
         return best_known_solution <= population.best_chromosome.cost
 
-    # @condition.params(active=(improvement_interval is not None))
-    @condition.params(active=False)
+    @condition.params(active=(improvement_interval is not None))
     def last_time_improvement(population : Population):
         lstimprovement = population.best_chromosome.last_improvement
         generation = population.generation
         return (generation - lstimprovement) <= improvement_interval
 
+    syslog.info("CHECKING CONDITIONS")
+    syslog.info(f"   {max_generation}")
+    syslog.info(f"   {best_known_reached}")
+    syslog.info(f"   {bestcost_lessthan}")
+    syslog.info(f"   {last_time_improvement}")
+
 
     STPG = instance_problem("datasets", "ORLibrary", stpg_filename)
     chromosome_length = STPG.nro_nodes - STPG.nro_terminals
+
+    syslog.info(f"  STPG :: {STPG.name},{STPG.nro_nodes},{STPG.nro_edges},{STPG.nro_terminals},{STPG.file_name}")
+    syslog.info(f"  params chromosome_length    {chromosome_length}")
 
     def eval_for(STPG):
         def wrapps(chromosome):
@@ -134,12 +153,11 @@ def simulation(population_size: int = 100,
             evol_func(population)
 
         except StopConditionReached as msg:
-            print(msg, ">>> print something else")
             simdata.stoppedby = str(msg)
+            syslog.info(f"  stopped by {simdata.stoppedby}")
 
         except Exception as error:
-
-            print(error)
+            syslog.exception("An error occured")
             raise error
 
         finally:
@@ -148,7 +166,9 @@ def simulation(population_size: int = 100,
                 simdata.stoppedby = 'unkonw'
 
             logger.log_simulation(population, STPG, simdata)
+            syslog.info('init report: writting simulation data')
             logger.report()
+            syslog.info('finish reporting data')
 
         # with the return statement is inside the finally block
         # the for loop keeps still running
@@ -162,36 +182,32 @@ def simulation(population_size: int = 100,
         bestcost_lessthan :
         for trial in range(n_trials):
             trial +=1
-            print(f"running trial {trial}/{n_trials} for {simulation_name}")
+            syslog.info(f">> running trial {trial}/{n_trials} for {simulation_name}")
             run(trial)
         else:
-            print('executed just fine')
+            syslog.info('>> executed loop just fine')
 
-    # return result
-
+    syslog.info("  FINISHI SIMULATION")
 
 if __name__ == "__main__":
-    from datetime import datetime
-    print("Inicializando em >> ", datetime.now())
+
     simulation(population_size= 100,
-                n_iterations= 5_000,
-                n_trials = 30,
+                n_iterations= 500,
+                n_trials = 6,
                 improvement_interval = 500,
                 stpg_filename = "steinb15.txt",
                 best_known_solution = 318,
                 evol_func = pipe_crossoveruniform,
-                simulation_name = "test_crossover_uniform"
+                simulation_name = "test_crossoveruniform"
             )
-    print("finalizando em >> ", datetime.now())
 
-    print("Inicializando em >> ", datetime.now())
-    simulation(population_size= 20,
-                n_iterations= 1_000,
-                n_trials = 3,
+
+    simulation(population_size= 100,
+                n_iterations= 5_000,
+                n_trials = 6,
                 improvement_interval = 500,
                 stpg_filename = "steinb15.txt",
                 best_known_solution = 318,
                 evol_func = pipe_crossover2points,
                 simulation_name = "test_crossover_2points"
             )
-    print("finalizando em >> ", datetime.now())
