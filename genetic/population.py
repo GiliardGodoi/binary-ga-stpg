@@ -1,5 +1,6 @@
 
 import statistics
+from copy import copy
 from operator import attrgetter
 from random import choices
 
@@ -9,7 +10,8 @@ from genetic.individual import Individual
 class BasePopulation:
     '''Define the basic class to define a GA'''
 
-    def __init__(self, chromosomes,
+    def __init__(self,
+                 chromosomes,
                  evaluation_func,
                  intended_size = None,**kwargs):
 
@@ -48,17 +50,12 @@ class BasePopulation:
         '''Evaluates the entire population.
 
         Returns:
-            int or float : total population cost
-            int or float : maximun cost from the current generation
-            float : average cost from the current generation
+            self
         '''
         evaluation_func = self.evaluation_func
-        evaluated_costs = list()
-        count_penalized = 0
+
         for individuo in self.individuals:
-            cost, partitions = individuo.evaluate(evaluation_func)
-            evaluated_costs.append(cost)
-            if partitions > 1: count_penalized += 1
+            individuo.evaluate(evaluation_func)
 
         return self
 
@@ -84,7 +81,7 @@ class BasePopulation:
 
         return self
 
-    def mutation(self, mutate_func,tx_mutation=0.2, **kwargs):
+    def mutation(self, mutate_func, tx_mutation=0.2, **kwargs):
         for individuo in self.individuals:
                 individuo.mutate(mutate_func=mutate_func,probability=tx_mutation, **kwargs)
 
@@ -96,11 +93,14 @@ class BasePopulation:
 
         max_cost = max(chromosome.cost for chromosome in self.individuals)
         population_fitness = list()
+        count_penalized = 0
 
         for chromosome in self.individuals:
             fitness = max_cost - chromosome.cost
             chromosome.fitness = fitness
             population_fitness.append(fitness)
+
+            if chromosome.partitions > 1 : count_penalized += 1
 
             if ((current_best is None) or
                 chromosome.fitness > current_best.fitness):
@@ -108,7 +108,7 @@ class BasePopulation:
 
         self.datacolector.log("evaluation",
             self.generation,
-            kwargs.get("penalized", None),
+            count_penalized,
             statistics.mean(population_fitness),
             statistics.stdev(population_fitness))
 
@@ -116,8 +116,8 @@ class BasePopulation:
 
         return self
 
-    def survivor(self, **kwargs):
-        return self
+    def survive(self, **kwargs):
+        raise NotImplementedError("alguma coisa não está serta")
 
     def _update_population(self, newpopulation, **kwargs):
         '''It's execute the population replace strategy'''
@@ -127,17 +127,17 @@ class BasePopulation:
         self.population = newpopulation
 
     def _update_best_chromosome(self, current_best, **kwargs):
-        if (self.best_chromosome is None  or
-            self.best_chromosome.cost > current_best.cost):
-            self.best_chromosome = current_best
-            self.datacolector.log('best_fitness', kwargs.get("iteration", 0), current_best.cost, current_best.fitness)
+
+        if self.best_chromosome is None  or self.best_chromosome.cost > current_best.cost:
+            self.best_chromosome = copy(current_best)
             self.best_chromosome.last_improvement = self.generation
+            self.datacolector.log('best_fitness', self.generation, self.best_chromosome.cost, self.best_chromosome.fitness)
 
-        self.datacolector.log('best_from_round', kwargs.get("iteration", 0), current_best.cost, current_best.fitness)
+        self.datacolector.log('best_from_round', self.generation, current_best.cost, current_best.fitness)
 
-    def sort_population(self,key=attrgetter("fitness")):
+    def sort_population(self,key="fitness"):
         '''Sort the population by fitness attribute'''
-        self.individuals.sort(key=key)
+        self.individuals.sort(key=attrgetter(key))
         return self
 
     def map(self, func, **kwargs):
