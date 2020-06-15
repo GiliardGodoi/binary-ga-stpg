@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 stpg_filename = dataset,
                 best_known_solution = value,
                 evol_func = pipe_crossoveruniform,
-                simulation_name = "20200615_crossoveruniform"
+                simulation_name = "20200615_cxuniform_interval500"
             )
 
     for dataset, value in DATASETS:
@@ -61,6 +61,29 @@ if __name__ == "__main__":
                 stpg_filename = dataset,
                 best_known_solution = value,
                 evol_func = pipe_crossoveruniform,
-                simulation_name = "20200615_crossoveruniform"
+                simulation_name = "20200615_cxuniform_interval1000"
+            )
+
+
+    for dataset, value in DATASETS:
+        simulation(population_size= 100,
+                n_iterations= 10_000,
+                n_trials = 30,
+                improvement_interval = 500,
+                stpg_filename = dataset,
+                best_known_solution = value,
+                evol_func = pipe_crossover2points,
+                simulation_name = "20200615_cx2points_interval500"
+            )
+
+    for dataset, value in DATASETS:
+        simulation(population_size= 100,
+                n_iterations= 10_000,
+                n_trials = 30,
+                improvement_interval = 1000,
+                stpg_filename = dataset,
+                best_known_solution = value,
+                evol_func = pipe_crossoveruniform,
+                simulation_name = "20200615_cx2points_interval1000"
             )
 
