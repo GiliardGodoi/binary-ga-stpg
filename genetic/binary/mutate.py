@@ -6,7 +6,7 @@ def flip_onebit(chromosome, defaults=['0', '1']):
 
     index = randrange(len(chromosome))
 
-    return chromosome[:index] + flip(chromosome[:index]) + chromosome[index+1:]
+    return chromosome[:index] + flip(chromosome[index]) + chromosome[index+1:]
 
 def flip_nbit(chromosome, flip_probability=0.2, defaults=['0', '1']):
 
